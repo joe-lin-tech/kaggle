@@ -46,7 +46,7 @@ class TraumaDetector(nn.Module):
         self.out_spleen = nn.Linear(1280, 3)
     
     def forward(self, x):
-        x = self.conv2(self.conv1(x))
+        x = self.conv2(F.relu(self.conv1(x)))
         x = self.backbone_pool(self.backbone_features(x))
 
         x = torch.reshape(x, (x.shape[0], -1))

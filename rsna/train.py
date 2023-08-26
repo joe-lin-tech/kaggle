@@ -25,7 +25,7 @@ model = TraumaDetector()
 model.to(DEVICE)
 
 optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+scheduler = None # torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
 
 loss_fn = CombinedLoss()
 
@@ -47,8 +47,8 @@ def train_epoch(model, optimizer, scheduler):
         optimizer.step()
 
         losses += loss.item()
-        writer.add_scalar("Loss/step", loss, i)
-    scheduler.step()
+        # writer.add_scalar("Loss/step", loss, i)
+    # scheduler.step()
 
     return losses / len(train_iter)
 
@@ -73,5 +73,10 @@ for epoch in range(1, EPOCHS + 1):
     val_loss = evaluate(model)
     writer.add_scalars("Loss/epoch", { 'train': train_loss, 'val': val_loss }, epoch)
     print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, "f"Epoch time = {(end_time - start_time):.3f}s"))
-
-torch.save(model.state_dict(), SAVE_FILE)
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'train_loss': train_loss,
+        'val_loss': val_loss
+    }, CHECKPOINT_FOLDER + f'/rsna_epoch{epoch}.pt')
