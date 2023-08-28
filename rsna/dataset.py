@@ -10,7 +10,7 @@ from typing import Literal
 from params import *
 
 class RSNADataset(Dataset):
-    def __init__(self, csv_file, root_dir, transform = None, mode: Literal['train', 'val', 'test'] = 'train',
+    def __init__(self, csv_file, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
                  input_type: Literal['dicom', 'jpeg'] = 'dicom'):
         data = pd.read_csv(csv_file)
         train_data, val_data = train_test_split(data, test_size=0.1, random_state=SEED, shuffle=True)
