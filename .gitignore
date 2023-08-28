@@ -4,3 +4,4 @@ runs
 models
 kaggle.pem
 .DS_Store
+*.csv

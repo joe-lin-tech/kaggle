@@ -85,6 +85,16 @@ def score(solution: pd.DataFrame, submission: pd.DataFrame, row_id_column_name: 
     return np.mean(label_group_losses)
 
 
-solution = pd.read_csv('data/train.csv')
+solution = pd.read_csv('solution.csv')
 submission = pd.read_csv('submission.csv')
 print(score(solution, submission, 'patient_id'))
+
+# data = pd.read_csv('data/train.csv')
+# data['bowel_weight'] = np.where(data['bowel_injury'] == 1, 2, 1)
+# data['extravasation_weight'] = np.where(data['extravasation_injury'] == 1, 6, 1)
+# data['kidney_weight'] = np.select([data['kidney_healthy'] == 1, data['kidney_low'] == 1, data['kidney_high'] == 1], [1, 2, 4])
+# data['liver_weight'] = np.select([data['liver_healthy'] == 1, data['liver_low'] == 1, data['liver_high'] == 1], [1, 2, 4])
+# data['spleen_weight'] = np.select([data['spleen_healthy'] == 1, data['spleen_low'] == 1, data['spleen_high'] == 1], [1, 2, 4])
+# data['any_injury_weight'] = np.where((data['bowel_healthy'] == 1) & (data['extravasation_healthy'] == 1) &
+#                               (data['kidney_healthy'] == 1) & (data['liver_healthy'] == 1) & (data['spleen_healthy'] == 1), 1, 6)
+# data.to_csv('solution.csv')
