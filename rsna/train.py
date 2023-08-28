@@ -16,7 +16,7 @@ train_iter = RSNADataset(csv_file=CSV_FILE, root_dir=ROOT_DIR, transform=torchvi
     torchvision.transforms.Resize((512, 512))
 ]), input_type='jpeg')
 train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
-train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, sampler=train_sampler)
+train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler)
 
 val_iter = RSNADataset(csv_file=CSV_FILE, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
     torchvision.transforms.Resize((512, 512))
