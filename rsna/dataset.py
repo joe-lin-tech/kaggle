@@ -22,6 +22,8 @@ class RSNADataset(Dataset):
         self.transform = transform
         self.mode = mode
         self.input_type = input_type
+        if mode == 'train':
+            self.weights = self.set_weights()
     
     def __len__(self):
         return len(self.patient_df)
@@ -58,3 +60,22 @@ class RSNADataset(Dataset):
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([cols[0], cols[2], np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:])])
         return input, label
+    
+    def set_weights(self):
+        fieldnames = [
+            'bowel_healthy', 'bowel_injury',
+            'extravasation_healthy', 'extravasation_injury',
+            'kidney_healthy', 'kidney_low', 'kidney_high',
+            'liver_healthy', 'liver_low', 'liver_high',
+            'spleen_healthy', 'spleen_low', 'spleen_high'
+        ]
+        raw_weights = { f: 1 / self.patient_df[f].value_counts()[1] for f in fieldnames }
+        
+        weights = []
+        for i, row in self.patient_df.iterrows():
+            weight = 0
+            for f in fieldnames:
+                weight += raw_weights[f] * row[f]
+            weights.append(weight)
+        
+        return weights

@@ -3,7 +3,7 @@ import torchvision
 import torch.nn as nn
 from dataset import RSNADataset
 from model import TraumaDetector, CombinedLoss
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from timeit import default_timer as timer
@@ -11,10 +11,12 @@ from params import *
 
 torch.manual_seed(SEED)
 
+
 train_iter = RSNADataset(csv_file=CSV_FILE, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
     torchvision.transforms.Resize((512, 512))
 ]), input_type='jpeg')
-train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True)
+train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
+train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, sampler=train_sampler)
 
 val_iter = RSNADataset(csv_file=CSV_FILE, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
     torchvision.transforms.Resize((512, 512))
