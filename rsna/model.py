@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
+from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, vit_b_16, ViT_B_16_Weights
 from params import *
 
 class CombinedLoss(nn.Module):
@@ -32,14 +32,23 @@ class TraumaDetector(nn.Module):
         super(TraumaDetector, self).__init__()
         # (96, 512, 512)
         self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3) # (128, 256, 256)
-        self.conv2 = nn.Conv2d(128, 96, 5, dilation=3) # (96, 244, 244)
+        self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6) # (64, 224, 224)
 
-        backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
-        self.backbone_features = backbone.features[2:]
-        self.backbone_features[0][0].block = self.backbone_features[0][0].block[1:]
-        self.backbone_features.eval()
-        self.backbone_pool = backbone.avgpool
-        self.backbone_pool.eval()
+
+        # backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+        backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
+        # print(backbone)
+        # self.backbone_proj = nn.Linear(64 * 16 * 16, 768)
+        self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
+        self.backbone_encoder = backbone.encoder
+        self.backbone_encoder.eval()
+        # self.backbone_features = backbone.features[2:]
+        # self.backbone_features[0][0].block = self.backbone_features[0][0].block[1:]
+        # self.backbone_features.eval()
+        # self.backbone_pool = backbone.avgpool
+        # self.backbone_pool.eval()
+        
+        self.linear = nn.Linear(768, 1280)
 
         self.out_bowel = nn.Linear(1280, 1)
         self.out_extravasation = nn.Linear(1280, 1)
@@ -49,7 +58,14 @@ class TraumaDetector(nn.Module):
     
     def forward(self, x):
         x = self.conv2(F.relu(self.conv1(x)))
-        x = self.backbone_pool(self.backbone_features(x))
+        # x = self.backbone_pool(self.backbone_features(x))
+        # patches = self.img_to_patch(x, 16)
+        proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
+        cls_token = torch.randn(1, 1, 768).repeat(proj.shape[0], 1, 1).to(DEVICE) # fix cls_token training
+        proj = torch.cat([cls_token, proj], dim=1)
+        x = self.backbone_encoder(proj)
+        # x = self.backbone_encoder(self.backbone_proj(x))
+        x = self.linear(x[:, 0, :])
 
         x = torch.reshape(x, (x.shape[0], -1))
         out = {
@@ -60,3 +76,19 @@ class TraumaDetector(nn.Module):
             'spleen': self.out_spleen(x)
         }
         return out
+    
+    def img_to_patch(self, x, patch_size, flatten_channels=True):
+        """
+        Inputs:
+            x - Tensor representing the image of shape [B, C, H, W]
+            patch_size - Number of pixels per dimension of the patches (integer)
+            flatten_channels - If True, the patches will be returned in a flattened format
+                            as a feature vector instead of a image grid.
+        """
+        B, C, H, W = x.shape
+        x = x.reshape(B, C, H // patch_size, patch_size, W // patch_size, patch_size)
+        x = x.permute(0, 2, 4, 1, 3, 5)  # [B, H', W', C, p_H, p_W]
+        x = x.flatten(1, 2)  # [B, H' * W', C, p_H, p_W]
+        if flatten_channels:
+            x = x.flatten(2, 4)  # [B, H' * W', C * p_H * p_W]
+        return x
