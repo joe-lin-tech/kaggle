@@ -58,7 +58,7 @@ class RSNADataset(Dataset):
         input = images[0] # fix sample selection
         # label = np.repeat(self.patient_df.iloc[idx].to_numpy()[1:][np.newaxis, :], images.shape[0], axis=0)
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
-        label = np.hstack([cols[0], cols[2], np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:])])
+        label = np.hstack([cols[1], cols[3], np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:])])
         return input, label
     
     def set_weights(self):
@@ -75,7 +75,7 @@ class RSNADataset(Dataset):
         for i, row in self.patient_df.iterrows():
             weight = 0
             for f in fieldnames:
-                weight += raw_weights[f] * row[f]
+                weight += raw_weights[f] * row[f] * (1 if 'healthy' in f else 100)
             weights.append(weight)
         
         return weights

@@ -2,16 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
+from params import *
 
 class CombinedLoss(nn.Module):
     def __init__(self):
         super(CombinedLoss, self).__init__()
-        self.bce = nn.BCEWithLogitsLoss()
-        self.ce = nn.CrossEntropyLoss()
+        self.bowel = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([2]).to(DEVICE))
+        self.extravasation = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
+        self.organ = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE))
     
     def forward(self, out, labels):
-        bce_loss = 2 * self.bce(out['bowel'], labels[:, 0:1].float()) + 6 * self.bce(out['extravasation'], labels[:, 1:2].float())
-        ce_loss = self.ce(out['kidney'], labels[:, 2]) + self.ce(out['liver'], labels[:, 3]) + self.ce(out['spleen'], labels[:, 4])
+        bce_loss = self.bowel(out['bowel'], labels[:, 0:1].float()) + self.extravasation(out['extravasation'], labels[:, 1:2].float())
+        ce_loss = self.organ(out['kidney'], labels[:, 2]) + self.organ(out['liver'], labels[:, 3]) + self.organ(out['spleen'], labels[:, 4])
         return bce_loss + ce_loss
 
 

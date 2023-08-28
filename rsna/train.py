@@ -17,6 +17,7 @@ train_iter = RSNADataset(csv_file=CSV_FILE, root_dir=ROOT_DIR, transform=torchvi
 ]), input_type='jpeg')
 train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
 train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler)
+# train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True)
 
 val_iter = RSNADataset(csv_file=CSV_FILE, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
     torchvision.transforms.Resize((512, 512))
@@ -27,7 +28,7 @@ model = TraumaDetector()
 model.to(DEVICE)
 
 optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9)
-scheduler = None # torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
 
 loss_fn = CombinedLoss()
 
@@ -50,7 +51,7 @@ def train_epoch(model, optimizer, scheduler):
 
         losses += loss.item()
         # writer.add_scalar("Loss/step", loss, i)
-    # scheduler.step()
+    scheduler.step()
 
     return losses / len(train_iter)
 
