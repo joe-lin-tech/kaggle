@@ -18,14 +18,6 @@ data = pd.read_csv(CSV_FILE)
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
 
-model = TraumaDetector()
-model.to(DEVICE)
-
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=0.01)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
-
-loss_fn = CombinedLoss()
-
 writer = SummaryWriter()
 
 def train_epoch(train_iter, train_dataloader, model, optimizer, scheduler):
@@ -77,6 +69,15 @@ for i, (train_idx, val_idx) in enumerate(splits):
         torchvision.transforms.Resize((512, 512))
     ]), mode='val', input_type='jpeg')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True)
+
+    model = TraumaDetector()
+    model.to(DEVICE)
+
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=0.01)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+
+    loss_fn = CombinedLoss()
+
     for epoch in range(1, EPOCHS + 1):
         start_time = timer()
         train_loss = train_epoch(train_iter, train_dataloader, model, optimizer, scheduler)
