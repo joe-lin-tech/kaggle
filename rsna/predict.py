@@ -50,10 +50,10 @@ def predict(model, batch_id, batch_input):
         for i in range(len(batch_id)):
             result = {
                 'patient_id': batch_id[i],
-                'bowel_healthy': bowel[i].item(),
-                'bowel_injury': 1 - bowel[i].item(),
-                'extravasation_healthy': extravasation[i].item(),
-                'extravasation_injury': 1 - extravasation[i].item(),
+                'bowel_healthy': 1 - bowel[i].item(),
+                'bowel_injury': bowel[i].item(),
+                'extravasation_healthy': 1 - extravasation[i].item(),
+                'extravasation_injury': extravasation[i].item(),
                 'kidney_healthy': kidney[i][0].item(),
                 'kidney_low': kidney[i][1].item(),
                 'kidney_high': kidney[i][2].item(),

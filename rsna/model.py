@@ -61,7 +61,7 @@ class TraumaDetector(nn.Module):
         # x = self.backbone_pool(self.backbone_features(x))
         # patches = self.img_to_patch(x, 16)
         proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
-        cls_token = torch.randn(1, 1, 768).repeat(proj.shape[0], 1, 1).to(DEVICE) # fix cls_token training
+        cls_token = torch.randn(1, 1, 768).repeat(proj.shape[0], 1, 1).to(proj.device) # fix cls_token training
         proj = torch.cat([cls_token, proj], dim=1)
         x = self.backbone_encoder(proj)
         # x = self.backbone_encoder(self.backbone_proj(x))

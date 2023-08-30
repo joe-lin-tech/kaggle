@@ -5,19 +5,21 @@ import pydicom as dicom
 import os
 import numpy as np
 from PIL import Image
-from sklearn.model_selection import train_test_split
+# from sklearn.model_selection import train_test_split
 from typing import Literal
 from params import *
 
 class RSNADataset(Dataset):
-    def __init__(self, csv_file, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
+    def __init__(self, split, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
                  input_type: Literal['dicom', 'jpeg'] = 'dicom'):
-        data = pd.read_csv(csv_file)
-        train_data, val_data = train_test_split(data, test_size=0.1, random_state=SEED, shuffle=True)
-        if mode == 'train':
-            self.patient_df = train_data
-        else:
-            self.patient_df = val_data
+        # data = pd.read_csv(csv_file)
+        # train_data, val_data = train_test_split(data, test_size=0.1, random_state=SEED, shuffle=True)
+        self.patient_df = split
+        
+        # if mode == 'train':
+        #     self.patient_df = train_data
+        # else:
+        #     self.patient_df = val_data
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
