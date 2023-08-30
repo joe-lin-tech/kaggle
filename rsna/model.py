@@ -32,6 +32,7 @@ class TraumaDetector(nn.Module):
         super(TraumaDetector, self).__init__()
         # (96, 512, 512)
         self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3) # (128, 256, 256)
+        self.dropout = nn.Dropout2d()
         self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6) # (64, 224, 224)
 
 
@@ -57,7 +58,7 @@ class TraumaDetector(nn.Module):
         self.out_spleen = nn.Linear(1280, 3)
     
     def forward(self, x):
-        x = self.conv2(F.relu(self.conv1(x)))
+        x = F.gelu(self.conv2(self.dropout(F.relu(self.conv1(x)))))
         # x = self.backbone_pool(self.backbone_features(x))
         # patches = self.img_to_patch(x, 16)
         proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
