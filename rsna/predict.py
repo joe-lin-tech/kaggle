@@ -19,7 +19,7 @@ model.eval()
 
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor(),
-    torchvision.transforms.Resize((512, 512))
+    torchvision.transforms.Resize((224, 224))
 ])
 
 fieldnames = [
@@ -68,7 +68,7 @@ def predict(model, batch_id, batch_input):
 
 batch_id = []
 batch_input = []
-for f in os.scandir('/Volumes/SSD/rsna/train_images_mini'):
+for f in os.scandir('../../train_images_mini'):
     if f.is_dir():
         path = f.path
         images = []
