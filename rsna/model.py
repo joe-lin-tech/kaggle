@@ -56,13 +56,14 @@ class TraumaDetector(nn.Module):
         # self.backbone_pool = backbone.avgpool
         # self.backbone_pool.eval()
         
-        self.linear = nn.Linear(768, 1280)
+        self.linear1 = nn.Linear(768, 384)
+        self.linear2 = nn.Linear(384, 192)
 
-        self.out_bowel = nn.Linear(1280, 1)
-        self.out_extravasation = nn.Linear(1280, 1)
-        self.out_kidney = nn.Linear(1280, 3)
-        self.out_liver = nn.Linear(1280, 3)
-        self.out_spleen = nn.Linear(1280, 3)
+        self.out_bowel = nn.Linear(192, 1)
+        self.out_extravasation = nn.Linear(192, 1)
+        self.out_kidney = nn.Linear(192, 3)
+        self.out_liver = nn.Linear(192, 3)
+        self.out_spleen = nn.Linear(192, 3)
     
     def forward(self, x):
         # x = F.gelu(self.conv2(self.dropout(F.relu(self.conv1(x)))))
@@ -73,7 +74,7 @@ class TraumaDetector(nn.Module):
         proj = torch.cat([cls_token, proj], dim=1)
         x = self.backbone_encoder(proj)
         # x = self.backbone_encoder(self.backbone_proj(x))
-        x = F.gelu(self.linear(x[:, 0, :]))
+        x = F.gelu(self.linear2(F.gelu(self.linear1(x[:, 0, :]))))
 
         x = torch.reshape(x, (x.shape[0], -1))
         out = {
