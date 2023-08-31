@@ -38,9 +38,13 @@ class DepthwiseSeparableConv(nn.Module):
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
-        self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3)
-        self.dropout = nn.Dropout2d()
-        self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6)
+        # self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3)
+        # self.dropout = nn.Dropout2d()
+        # self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6)
+        self.conv1 = nn.Conv2d(3, 8, 9, stride=2)
+        self.conv2 = nn.Conv2d(8, 16, 11, stride=1)
+        self.conv3 = nn.Conv2d(16, 8, 11, stride=1)
+        self.conv4 = nn.Conv2d(8, 3, 9, stride=1)
 
         # backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
@@ -48,8 +52,11 @@ class TraumaDetector(nn.Module):
         # self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
         self.backbone_encoder = backbone.encoder
         self.backbone_encoder.eval()
+        # for layer in self.backbone_encoder.layers:
+        #     layer.self_attention.train()
         self.backbone_encoder.layers.encoder_layer_10.train()
         self.backbone_encoder.layers.encoder_layer_11.train()
+
         # self.backbone_features = backbone.features[2:]
         # self.backbone_features[0][0].block = self.backbone_features[0][0].block[1:]
         # self.backbone_features.eval()
@@ -69,6 +76,7 @@ class TraumaDetector(nn.Module):
         # x = F.gelu(self.conv2(self.dropout(F.relu(self.conv1(x)))))
         # x = self.backbone_pool(self.backbone_features(x))
         # patches = self.img_to_patch(x, 16)
+        x = F.relu(self.conv4(F.relu(self.conv3(F.relu(self.conv2(F.relu(self.conv1(x))))))))
         proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
         cls_token = torch.randn(1, 1, 768).repeat(proj.shape[0], 1, 1).to(proj.device) # fix cls_token training
         proj = torch.cat([cls_token, proj], dim=1)
