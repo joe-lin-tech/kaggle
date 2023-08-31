@@ -41,8 +41,8 @@ class TraumaDetector(nn.Module):
         # self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3)
         # self.dropout = nn.Dropout2d()
         # self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6)
-        self.conv1 = nn.Conv2d(3, 8, 9, stride=2)
-        self.conv2 = nn.Conv2d(8, 16, 11, stride=1)
+        self.conv1 = nn.Conv2d(96, 48, 9, stride=2)
+        self.conv2 = nn.Conv2d(48, 16, 11, stride=1)
         self.conv3 = nn.Conv2d(16, 8, 11, stride=1)
         self.conv4 = nn.Conv2d(8, 3, 9, stride=1)
 
