@@ -30,17 +30,14 @@ class DepthwiseSeparableConv(nn.Module):
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
-        # (96, 512, 512)
-        self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3) # (128, 256, 256)
+        self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3)
         self.dropout = nn.Dropout2d()
-        self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6) # (64, 224, 224)
-
+        self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6)
 
         # backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
-        # print(backbone)
-        # self.backbone_proj = nn.Linear(64 * 16 * 16, 768)
-        self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
+        self.backbone_proj = backbone.conv_proj
+        # self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
         self.backbone_encoder = backbone.encoder
         self.backbone_encoder.eval()
         # self.backbone_features = backbone.features[2:]
@@ -58,7 +55,7 @@ class TraumaDetector(nn.Module):
         self.out_spleen = nn.Linear(1280, 3)
     
     def forward(self, x):
-        x = F.gelu(self.conv2(self.dropout(F.relu(self.conv1(x)))))
+        # x = F.gelu(self.conv2(self.dropout(F.relu(self.conv1(x)))))
         # x = self.backbone_pool(self.backbone_features(x))
         # patches = self.img_to_patch(x, 16)
         proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
