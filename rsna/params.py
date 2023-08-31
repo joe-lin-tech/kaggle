@@ -5,6 +5,7 @@ N_CHANNELS = 3 # 96
 
 SEED = 0
 
+LEARNING_RATE = 0.01
 EPOCHS = 10
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('mps')

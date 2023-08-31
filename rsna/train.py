@@ -73,7 +73,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     model = TraumaDetector()
     model.to(DEVICE)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=0.01)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
 
     loss_fn = CombinedLoss()
