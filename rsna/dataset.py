@@ -52,12 +52,14 @@ class RSNADataset(Dataset):
                             scan.append(image)
                     else:
                         img = Image.open(os.path.join(root, dirname, filename))
-                        if self.transform:
-                            img = self.transform(img)
+                        # if self.transform:
+                        #     img = self.transform(img)
                         scan.append(img)
                 images.append(np.stack(scan))
         # input = np.stack(images)
         input = images[0] # fix sample selection
+        if self.transform:
+            input = self.transform(torch.tensor(input))
         # label = np.repeat(self.patient_df.iloc[idx].to_numpy()[1:][np.newaxis, :], images.shape[0], axis=0)
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([cols[1], cols[3], np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),

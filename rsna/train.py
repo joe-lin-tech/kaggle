@@ -59,7 +59,9 @@ def evaluate(val_iter, val_dataloader, model):
 for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
-        torchvision.transforms.Resize((512, 512))
+        torchvision.transforms.Resize((512, 512)),
+        torchvision.transforms.RandomHorizontalFlip(),
+        torchvision.transforms.RandomRotation(degrees=7.5)
     ]), input_type='jpeg')
     train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler)
