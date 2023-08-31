@@ -49,6 +49,7 @@ class TraumaDetector(nn.Module):
         # backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
         self.backbone_proj = backbone.conv_proj
+        self.cls_token = nn.Parameter(torch.rand(1, 1, 768))
         # self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
         self.backbone_encoder = backbone.encoder
         self.backbone_encoder.eval()
@@ -78,7 +79,7 @@ class TraumaDetector(nn.Module):
         # patches = self.img_to_patch(x, 16)
         x = F.relu(self.conv4(F.relu(self.conv3(F.relu(self.conv2(F.relu(self.conv1(x))))))))
         proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
-        cls_token = torch.randn(1, 1, 768).repeat(proj.shape[0], 1, 1).to(proj.device) # fix cls_token training
+        cls_token = self.cls_token.repeat(proj.shape[0], 1, 1) # fix cls_token training
         proj = torch.cat([cls_token, proj], dim=1)
         x = self.backbone_encoder(proj)
         # x = self.backbone_encoder(self.backbone_proj(x))

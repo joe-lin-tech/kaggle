@@ -19,7 +19,7 @@ model.eval()
 
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor(),
-    torchvision.transforms.Resize((224, 224))
+    torchvision.transforms.Resize((512, 512))
 ])
 
 fieldnames = [
