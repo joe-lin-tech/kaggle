@@ -40,6 +40,8 @@ class TraumaDetector(nn.Module):
         # self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
         self.backbone_encoder = backbone.encoder
         self.backbone_encoder.eval()
+        self.backbone_encoder.layers.encoder_layer_10.train()
+        self.backbone_encoder.layers.encoder_layer_11.train()
         # self.backbone_features = backbone.features[2:]
         # self.backbone_features[0][0].block = self.backbone_features[0][0].block[1:]
         # self.backbone_features.eval()
@@ -63,7 +65,7 @@ class TraumaDetector(nn.Module):
         proj = torch.cat([cls_token, proj], dim=1)
         x = self.backbone_encoder(proj)
         # x = self.backbone_encoder(self.backbone_proj(x))
-        x = self.linear(x[:, 0, :])
+        x = F.gelu(self.linear(x[:, 0, :]))
 
         x = torch.reshape(x, (x.shape[0], -1))
         out = {
