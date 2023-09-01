@@ -5,8 +5,8 @@ N_CHANNELS = 4
 
 SEED = 5
 
-LEARNING_RATE = 0.01
-EPOCHS = 10
+LEARNING_RATE = 1e-4
+EPOCHS = 25
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('mps')
 CSV_FILE = 'data/train.csv'

@@ -40,18 +40,23 @@ class TraumaDetector(nn.Module):
 
         self.linear_bowel = nn.Sequential(
             nn.Linear(384, 256),
+            nn.GELU(),
             nn.Linear(256, 192))
         self.linear_extravasation = nn.Sequential(
             nn.Linear(384, 256),
+            nn.GELU(),
             nn.Linear(256, 192))
         self.linear_kidney = nn.Sequential(
             nn.Linear(384, 256),
+            nn.GELU(),
             nn.Linear(256, 192))
         self.linear_liver = nn.Sequential(
             nn.Linear(384, 256),
+            nn.GELU(),
             nn.Linear(256, 192))
         self.linear_spleen = nn.Sequential(
             nn.Linear(384, 256),
+            nn.GELU(),
             nn.Linear(256, 192))
 
         self.out_bowel = nn.Linear(192, 1)
