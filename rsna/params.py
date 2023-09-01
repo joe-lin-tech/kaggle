@@ -3,10 +3,10 @@ import torch
 BATCH_SIZE = 16
 N_CHANNELS = 4
 
-SEED = 0
+SEED = 5
 
 LEARNING_RATE = 0.01
-EPOCHS = 25
+EPOCHS = 10
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('mps')
 CSV_FILE = 'data/train.csv'
