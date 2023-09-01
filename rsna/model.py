@@ -66,8 +66,13 @@ class TraumaDetector(nn.Module):
         # self.backbone_pool = backbone.avgpool
         # self.backbone_pool.eval()
         
-        self.linear1 = nn.Linear(768, 384)
-        self.linear2 = nn.Linear(384, 192)
+        self.linear = nn.Linear(768, 384)
+
+        self.linear_bowel = nn.Linear(384, 192)
+        self.linear_extravasation = nn.Linear(384, 192)
+        self.linear_kidney = nn.Linear(384, 192)
+        self.linear_liver = nn.Linear(384, 192)
+        self.linear_spleen = nn.Linear(384, 192)
 
         self.out_bowel = nn.Linear(192, 1)
         self.out_extravasation = nn.Linear(192, 1)
@@ -85,15 +90,16 @@ class TraumaDetector(nn.Module):
         proj = torch.cat([cls_token, proj], dim=1)
         x = self.backbone_encoder(proj)
         # x = self.backbone_encoder(self.backbone_proj(x))
-        x = F.gelu(self.linear2(F.gelu(self.linear1(x[:, 0, :]))))
+        
+        x = F.gelu(self.linear(x[:, 0, :]))
+        # x = torch.reshape(x, (x.shape[0], -1))
 
-        x = torch.reshape(x, (x.shape[0], -1))
         out = {
-            'bowel': self.out_bowel(x),
-            'extravasation': self.out_extravasation(x),
-            'kidney': self.out_kidney(x),
-            'liver': self.out_liver(x),
-            'spleen': self.out_spleen(x)
+            'bowel': self.out_bowel(F.gelu(self.linear_bowel(x))),
+            'extravasation': self.out_extravasation(F.gelu(self.linear_extravasation(x))),
+            'kidney': self.out_kidney(F.gelu(self.linear_kidney(x))),
+            'liver': self.out_liver(F.gelu(self.linear_liver(x))),
+            'spleen': self.out_spleen(F.gelu(self.linear_spleen(x)))
         }
         return out
     
