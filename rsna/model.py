@@ -48,17 +48,20 @@ class TraumaDetector(nn.Module):
 
         # backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
-        self.backbone_proj = backbone.conv_proj
-        self.cls_token = nn.Parameter(torch.rand(1, 1, 768))
-        # self.backbone_proj = nn.Conv2d(64, 768, 16, stride=16)
-        self.backbone_encoder = backbone.encoder
-        self.backbone_encoder.eval()
-        # for layer in self.backbone_encoder.layers:
-        #     layer.self_attention.train()
-        self.backbone_encoder.layers.encoder_layer_10.train()
-        self.backbone_encoder.layers.encoder_layer_10.self_attention._reset_parameters()
-        self.backbone_encoder.layers.encoder_layer_11.train()
-        self.backbone_encoder.layers.encoder_layer_11.self_attention._reset_parameters()
+        self.backbone = backbone
+        self.backbone.eval()
+        # self.backbone_proj = backbone.conv_proj
+        # self.cls_token = nn.Parameter(torch.rand(1, 1, 768))
+        # self.backbone_encoder = backbone.encoder
+        # self.backbone_encoder.eval()
+        for layer in self.backbone.encoder.layers:
+            layer.self_attention._reset_parameters()
+            layer.self_attention.train()
+        self.backbone.heads.head = nn.Linear(768, 384)
+        # self.backbone_encoder.layers.encoder_layer_10.train()
+        # self.backbone_encoder.layers.encoder_layer_10.self_attention._reset_parameters()
+        # self.backbone_encoder.layers.encoder_layer_11.train()
+        # self.backbone_encoder.layers.encoder_layer_11.self_attention._reset_parameters()
 
         # self.backbone_features = backbone.features[2:]
         # self.backbone_features[0][0].block = self.backbone_features[0][0].block[1:]
@@ -66,7 +69,7 @@ class TraumaDetector(nn.Module):
         # self.backbone_pool = backbone.avgpool
         # self.backbone_pool.eval()
         
-        self.linear = nn.Linear(768, 384)
+        # self.linear = nn.Linear(768, 384)
 
         self.linear_bowel = nn.Linear(384, 192)
         self.linear_extravasation = nn.Linear(384, 192)
@@ -85,13 +88,14 @@ class TraumaDetector(nn.Module):
         # x = self.backbone_pool(self.backbone_features(x))
         # patches = self.img_to_patch(x, 16)
         x = F.relu(self.conv4(F.relu(self.conv3(F.relu(self.conv2(F.relu(self.conv1(x))))))))
-        proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
-        cls_token = self.cls_token.repeat(proj.shape[0], 1, 1) # fix cls_token training
-        proj = torch.cat([cls_token, proj], dim=1)
-        x = self.backbone_encoder(proj)
+        # proj = self.backbone_proj(x).flatten(start_dim=2).transpose(1, 2)
+        # cls_token = self.cls_token.repeat(proj.shape[0], 1, 1) # fix cls_token training
+        # proj = torch.cat([cls_token, proj], dim=1)
+        # x = self.backbone_encoder(proj)
+        x = self.backbone(x)
         # x = self.backbone_encoder(self.backbone_proj(x))
         
-        x = F.gelu(self.linear(x[:, 0, :]))
+        # x = F.gelu(self.linear(x[:, 0, :]))
         # x = torch.reshape(x, (x.shape[0], -1))
 
         out = {
