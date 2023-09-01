@@ -41,8 +41,8 @@ class TraumaDetector(nn.Module):
         # self.conv1 = DepthwiseSeparableConv(96, 128, 7, stride=2, padding=3)
         # self.dropout = nn.Dropout2d()
         # self.conv2 = nn.Conv2d(128, 64, 7, padding=2, dilation=6)
-        self.conv1 = nn.Conv2d(96, 48, 9, stride=2)
-        self.conv2 = nn.Conv2d(48, 16, 11, stride=1)
+        self.conv1 = nn.Conv2d(3, 8, 9, stride=2)
+        self.conv2 = nn.Conv2d(8, 16, 11, stride=1)
         self.conv3 = nn.Conv2d(16, 8, 11, stride=1)
         self.conv4 = nn.Conv2d(8, 3, 9, stride=1)
 
@@ -56,7 +56,9 @@ class TraumaDetector(nn.Module):
         # for layer in self.backbone_encoder.layers:
         #     layer.self_attention.train()
         self.backbone_encoder.layers.encoder_layer_10.train()
+        self.backbone_encoder.layers.encoder_layer_10.self_attention._reset_parameters()
         self.backbone_encoder.layers.encoder_layer_11.train()
+        self.backbone_encoder.layers.encoder_layer_11.self_attention._reset_parameters()
 
         # self.backbone_features = backbone.features[2:]
         # self.backbone_features[0][0].block = self.backbone_features[0][0].block[1:]
