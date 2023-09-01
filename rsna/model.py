@@ -38,11 +38,21 @@ class TraumaDetector(nn.Module):
                 param.requires_grad = True
         self.backbone.heads.head = nn.Linear(768, 384)
 
-        self.linear_bowel = nn.Linear(384, 192)
-        self.linear_extravasation = nn.Linear(384, 192)
-        self.linear_kidney = nn.Linear(384, 192)
-        self.linear_liver = nn.Linear(384, 192)
-        self.linear_spleen = nn.Linear(384, 192)
+        self.linear_bowel = nn.Sequential(
+            nn.Linear(384, 256),
+            nn.Linear(256, 192))
+        self.linear_extravasation = nn.Sequential(
+            nn.Linear(384, 256),
+            nn.Linear(256, 192))
+        self.linear_kidney = nn.Sequential(
+            nn.Linear(384, 256),
+            nn.Linear(256, 192))
+        self.linear_liver = nn.Sequential(
+            nn.Linear(384, 256),
+            nn.Linear(256, 192))
+        self.linear_spleen = nn.Sequential(
+            nn.Linear(384, 256),
+            nn.Linear(256, 192))
 
         self.out_bowel = nn.Linear(192, 1)
         self.out_extravasation = nn.Linear(192, 1)
