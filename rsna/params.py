@@ -5,7 +5,7 @@ N_CHANNELS = 4
 
 SEED = 5
 
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3
 EPOCHS = 25
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('mps')
