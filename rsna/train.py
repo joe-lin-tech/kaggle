@@ -39,7 +39,8 @@ def train_epoch(train_iter, train_dataloader, model, optimizer, scheduler):
 
         losses += loss.item()
         # writer.add_scalar("Loss/step", loss, i)
-    scheduler.step()
+    # scheduler.step()
+    scheduler.step(losses / len(train_iter))
 
     return losses / len(train_iter)
 
@@ -78,7 +79,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
     model.to(DEVICE)
 
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=0.01)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
 
     loss_fn = CombinedLoss()
 
