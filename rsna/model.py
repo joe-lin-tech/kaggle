@@ -10,19 +10,19 @@ class CombinedLoss(nn.Module):
         self.bowel = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([2]).to(DEVICE))
         self.extravasation = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
         self.organ = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE))
-        self.any = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
+        # self.any = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
     
     def forward(self, out, labels):
         bce_loss = self.bowel(out['bowel'], labels[:, 0:1].float()) + self.extravasation(out['extravasation'], labels[:, 1:2].float())
         ce_loss = self.organ(out['kidney'], labels[:, 2]) + self.organ(out['liver'], labels[:, 3]) + self.organ(out['spleen'], labels[:, 4])
         
-        bowel, extravasation = F.sigmoid(out['bowel']), F.sigmoid(out['extravasation'])
-        kidney, liver, spleen = F.softmax(out['kidney']), F.softmax(out['liver']), F.softmax(out['spleen'])
-        any_injury = bowel + extravasation + kidney[:, 1:2] + kidney[:, 2:3] + liver[:, 1:2] + liver[:, 2:3] + spleen[:, 1:2] + liver[:, 2:3]
-        any_injury /= 5
-        any_loss = self.any(any_injury, labels[:, 5:6].float())
+        # bowel, extravasation = F.sigmoid(out['bowel']), F.sigmoid(out['extravasation'])
+        # kidney, liver, spleen = F.softmax(out['kidney']), F.softmax(out['liver']), F.softmax(out['spleen'])
+        # any_injury = bowel + extravasation + kidney[:, 1:2] + kidney[:, 2:3] + liver[:, 1:2] + liver[:, 2:3] + spleen[:, 1:2] + liver[:, 2:3]
+        # any_injury /= 5
+        # any_loss = self.any(any_injury, labels[:, 5:6].float())
 
-        return bce_loss + ce_loss + any_loss
+        return bce_loss + ce_loss # + any_loss
 
 
 class TraumaDetector(nn.Module):
