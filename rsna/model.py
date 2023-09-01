@@ -29,11 +29,13 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
         self.backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
-        self.backbone.eval()
+        for param in self.backbone.parameters():
+            param.requires_grad = False
         self.backbone.conv_proj = nn.Conv2d(N_CHANNELS, 768, 16, stride=16)
         for layer in self.backbone.encoder.layers:
             layer.self_attention._reset_parameters()
-            layer.self_attention.train()
+            for param in layer.self_attention.parameters():
+                param.requires_grad = True
         self.backbone.heads.head = nn.Linear(768, 384)
 
         self.linear_bowel = nn.Linear(384, 192)

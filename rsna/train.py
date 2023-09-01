@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 from sklearn.model_selection import KFold
+from grad import plot_gradient
 from tqdm import tqdm
 from timeit import default_timer as timer
 from params import *
@@ -33,6 +34,7 @@ def train_epoch(train_iter, train_dataloader, model, optimizer, scheduler):
         optimizer.zero_grad()
         loss = loss_fn(out, labels)
         loss.backward()
+        # plot_gradient(model.named_parameters())
         optimizer.step()
 
         losses += loss.item()
