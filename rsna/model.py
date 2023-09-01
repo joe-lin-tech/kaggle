@@ -18,8 +18,8 @@ class CombinedLoss(nn.Module):
         
         bowel, extravasation = torch.sigmoid(out['bowel']), torch.sigmoid(out['extravasation'])
         kidney, liver, spleen = F.softmax(out['kidney']), F.softmax(out['liver']), F.softmax(out['spleen'])
-        any_injury = bowel + extravasation + kidney[:, 1:2] + kidney[:, 2:3] + liver[:, 1:2] + liver[:, 2:3] + spleen[:, 1:2] + liver[:, 2:3]
-        any_injury /= 5
+        any_injury = torch.hstack([bowel, extravasation, kidney[:, 0:1], liver[:, 0:1], spleen])
+        any_injury, _ = torch.max(any_injury, keepdim=True, dim=-1)
         any_loss = self.any(any_injury, labels[:, 5:6].float())
 
         return bce_loss + ce_loss + any_loss
@@ -40,8 +40,8 @@ class TraumaDetector(nn.Module):
         super(TraumaDetector, self).__init__()
         self.conv1 = DepthwiseSeparableConv(N_CHANNELS, N_CHANNELS // 2, 9, stride=2)
         self.conv2 = DepthwiseSeparableConv(N_CHANNELS // 2, N_CHANNELS // 4, 11, stride=1)
-        self.conv3 = nn.Conv2d(N_CHANNELS // 4, N_CHANNELS // 8, 11, stride=1)
-        self.conv4 = nn.Conv2d(N_CHANNELS // 8, 3, 9, stride=1)
+        self.conv3 = DepthwiseSeparableConv(N_CHANNELS // 4, N_CHANNELS // 8, 11, stride=1)
+        self.conv4 = DepthwiseSeparableConv(N_CHANNELS // 8, 3, 9, stride=1)
 
         self.backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
         for param in self.backbone.parameters():
