@@ -62,8 +62,8 @@ class RSNADataset(Dataset):
             input = self.transform(torch.tensor(input))
         # label = np.repeat(self.patient_df.iloc[idx].to_numpy()[1:][np.newaxis, :], images.shape[0], axis=0)
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
-        label = np.hstack([cols[1], cols[3], np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:])])
-                        #    0 if cols[1] == 0 and cols[3] == 0 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
+        label = np.hstack([cols[1], cols[3], np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
+                           0 if cols[1] == 0 and cols[3] == 0 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
         return input, label
     
     def set_weights(self):
