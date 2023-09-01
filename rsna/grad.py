@@ -7,7 +7,7 @@ def plot_gradient(params):
     layer_names = []
     for n, p in params:
         if p.requires_grad and "bias" not in n:
-            layer_names.append(n)
+            layer_names.append(n[:15])
             layer_grads.append(p.grad.abs().mean().cpu())
     
     plt.plot(layer_grads)

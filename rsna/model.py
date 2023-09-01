@@ -30,9 +30,10 @@ class DepthwiseSeparableConv(nn.Module):
         super(DepthwiseSeparableConv, self).__init__()
         self.depth_conv = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels)
         self.point_conv = nn.Conv2d(in_channels, out_channels, 1)
+        self.batch_norm = nn.BatchNorm2d(out_channels)
     
     def forward(self, x):
-        return F.relu(self.point_conv(self.depth_conv(x)))
+        return self.batch_norm(F.relu(self.point_conv(self.depth_conv(x))))
     
 
 class TraumaDetector(nn.Module):
@@ -43,16 +44,32 @@ class TraumaDetector(nn.Module):
         self.conv3 = DepthwiseSeparableConv(N_CHANNELS // 4, N_CHANNELS // 8, 11, stride=1)
         self.conv4 = DepthwiseSeparableConv(N_CHANNELS // 8, 3, 9, stride=1)
 
+        self.res_block = nn.Sequential(
+            nn.Conv2d(768, 384, 5, stride=1),
+            nn.MaxPool2d(2, 2),
+            nn.ReLU(),
+            nn.Conv2d(384, 192, 3, stride=1),
+            nn.MaxPool2d(2, 2),
+            nn.ReLU())
+
         self.backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
-        for param in self.backbone.parameters():
+        for param in self.backbone.encoder.parameters():
             param.requires_grad = False
-        # self.backbone.conv_proj = nn.Conv2d(N_CHANNELS, 768, 16, stride=16)
-        for layer in self.backbone.encoder.layers:
-            layer.self_attention._reset_parameters()
-            for param in layer.self_attention.parameters():
-                param.requires_grad = True
+        self.backbone.conv_proj = nn.Conv2d(3, 768, 16, stride=16)
+        # self.backbone.conv_proj.reset_parameters()
+        # for layer in self.backbone.encoder.layers[8:]:
+        #     layer.self_attention._reset_parameters()
+        #     for param in layer.self_attention.parameters():
+        #         param.requires_grad = True
+        #     layer.mlp[0].reset_parameters()
+        #     for param in layer.mlp[0].parameters():
+        #         param.requires_grad = True
+        #     layer.mlp[3].reset_parameters()
+        #     for param in layer.mlp[3].parameters():
+        #         param.requires_grad = True
         self.backbone.heads.head = nn.Linear(768, 384)
 
+        self.linear = nn.Linear(576, 384)
         self.linear_bowel = nn.Sequential(
             nn.Linear(384, 256),
             nn.GELU(),
@@ -82,7 +99,9 @@ class TraumaDetector(nn.Module):
     
     def forward(self, x):
         x = self.conv4(self.conv3(self.conv2(self.conv1(x))))
+        res = torch.flatten(self.res_block(self.backbone.conv_proj(x)), 1)
         x = self.backbone(x)
+        x = F.gelu(self.linear(torch.hstack([x, res])))
         out = {
             'bowel': self.out_bowel(F.gelu(self.linear_bowel(x))),
             'extravasation': self.out_extravasation(F.gelu(self.linear_extravasation(x))),
