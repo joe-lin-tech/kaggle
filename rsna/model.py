@@ -45,12 +45,15 @@ class TraumaDetector(nn.Module):
         self.backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         for param in self.backbone.parameters():
             param.requires_grad = False
+        self.backbone.classifier[1] = nn.Linear(1280, 14)
+        for param in self.backbone.classifier.parameters():
+            param.requires_grad = True
 
-        self.out_bowel = nn.Linear(1280, 1)
-        self.out_extravasation = nn.Linear(1280, 1)
-        self.out_kidney = nn.Linear(1280, 3)
-        self.out_liver = nn.Linear(1280, 3)
-        self.out_spleen = nn.Linear(1280, 3)
+        self.out_bowel = nn.Linear(14, 1)
+        self.out_extravasation = nn.Linear(14, 1)
+        self.out_kidney = nn.Linear(14, 3)
+        self.out_liver = nn.Linear(14, 3)
+        self.out_spleen = nn.Linear(14, 3)
     
     def forward(self, x):
         x = F.relu(self.conv2(self.conv1(x)))
