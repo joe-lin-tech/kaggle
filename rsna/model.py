@@ -51,21 +51,36 @@ class TraumaDetector(nn.Module):
         self.backbone.classifier[1] = nn.Linear(1280, 256)
         for param in self.backbone.classifier.parameters():
             param.requires_grad = True
-        self.backbone.eval()
 
-        self.linear = nn.Linear(256, 14)
-        self.batch_norm = nn.BatchNorm1d(14)
-
-        self.out_bowel = nn.Linear(14, 1)
-        self.out_extravasation = nn.Linear(14, 1)
-        self.out_kidney = nn.Linear(14, 3)
-        self.out_liver = nn.Linear(14, 3)
-        self.out_spleen = nn.Linear(14, 3)
+        self.out_bowel = nn.Sequential(
+            nn.Linear(256, 14),
+            nn.BatchNorm1d(14),
+            nn.Linear(14, 1)
+        )
+        self.out_extravasation = nn.Sequential(
+            nn.Linear(256, 14),
+            nn.BatchNorm1d(14),
+            nn.Linear(14, 1)
+        )
+        self.out_kidney = nn.Sequential(
+            nn.Linear(256, 14),
+            nn.BatchNorm1d(14),
+            nn.Linear(14, 3)
+        )
+        self.out_liver = nn.Sequential(
+            nn.Linear(256, 14),
+            nn.BatchNorm1d(14),
+            nn.Linear(14, 3)
+        )
+        self.out_spleen = nn.Sequential(
+            nn.Linear(256, 14),
+            nn.BatchNorm1d(14),
+            nn.Linear(14, 3)
+        )
     
     def forward(self, x):
         # x = F.relu(self.conv2(self.conv1(x)))
         x = self.backbone(x)
-        x = self.batch_norm(F.relu(self.linear(x)))
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),
