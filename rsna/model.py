@@ -107,9 +107,10 @@ class TraumaDetector(nn.Module):
         )
     
     def forward(self, x):
-        x = x.view(x.shape[0] * (N_CHANNELS // 3), 3, x.shape[-2], x.shape[-1])
+        b = x.shape[0]
+        x = x.view(b * (N_CHANNELS // 3), 3, x.shape[-2], x.shape[-1])
         x = self.backbone(x)
-        x = x.view(x.shape[0], N_CHANNELS // 3, x.shape[-3], x.shape[-2], x.shape[-1])
+        x = x.view(b, N_CHANNELS // 3, x.shape[-3], x.shape[-2], x.shape[-1])
         x = self.head(x)
         x = torch.flatten(x, 1)
         out = {
