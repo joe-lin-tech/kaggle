@@ -45,9 +45,13 @@ class TraumaDetector(nn.Module):
         self.backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         for param in self.backbone.parameters():
             param.requires_grad = False
-        self.backbone.classifier[1] = nn.Linear(1280, 14)
+        self.backbone.classifier[1] = nn.Linear(1280, 256)
         for param in self.backbone.classifier.parameters():
             param.requires_grad = True
+        self.backbone.eval()
+
+        self.linear = nn.Linear(256, 14)
+        self.batch_norm = nn.BatchNorm1d(14)
 
         self.out_bowel = nn.Linear(14, 1)
         self.out_extravasation = nn.Linear(14, 1)
@@ -58,6 +62,7 @@ class TraumaDetector(nn.Module):
     def forward(self, x):
         x = F.relu(self.conv2(self.conv1(x)))
         x = self.backbone(x)
+        x = self.batch_norm(F.relu(self.linear(x)))
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),

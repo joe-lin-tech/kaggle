@@ -34,7 +34,7 @@ def train_epoch(train_iter, train_dataloader, model, optimizer, scheduler):
         optimizer.zero_grad()
         loss = loss_fn(out, labels)
         loss.backward()
-        # plot_gradient(model.named_parameters())
+        plot_gradient(model.named_parameters())
         optimizer.step()
 
         losses += loss.item()

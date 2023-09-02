@@ -51,6 +51,9 @@ def score(solution: pd.DataFrame, submission: pd.DataFrame, row_id_column_name: 
     all_target_categories = binary_targets + triple_level_targets
 
     label_group_losses = []
+    label_group_precisions = {}
+    label_group_recalls = {}
+    label_group_aucs = {}
     for category in all_target_categories:
         if category in binary_targets:
             col_group = [f'{category}_healthy', f'{category}_injury']
@@ -70,7 +73,28 @@ def score(solution: pd.DataFrame, submission: pd.DataFrame, row_id_column_name: 
                 sample_weight=solution[f'{category}_weight'].values
             )
         )
+        
+        label_group_precisions[category] = sklearn.metrics.precision_score(
+            y_true=np.argmax(solution[col_group].values, axis=-1, keepdims=True),
+            y_pred=np.argmax(submission[col_group].values, axis=-1, keepdims=True),
+            average='weighted'
+        )
 
+        label_group_recalls[category] = sklearn.metrics.recall_score(
+            y_true=np.argmax(solution[col_group].values, axis=-1, keepdims=True),
+            y_pred=np.argmax(submission[col_group].values, axis=-1, keepdims=True),
+            average='weighted'
+        )
+
+        label_group_aucs[category] = sklearn.metrics.roc_auc_score(
+            y_true=solution[col_group].values,
+            y_score=submission[col_group].values,
+            multi_class='ovr'
+        )
+
+    print(label_group_precisions)
+    print(label_group_recalls)
+    print(label_group_aucs)
     # Derive a new any_injury label by taking the max of 1 - p(healthy) for each label group
     healthy_cols = [x + '_healthy' for x in all_target_categories]
     any_injury_labels = (1 - solution[healthy_cols]).max(axis=1)
