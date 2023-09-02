@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, vit_b_16, ViT_B_16_Weights
-from vit_pytorch.cct import cct_14
+from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
 from params import *
 
 class CombinedLoss(nn.Module):
@@ -40,31 +39,21 @@ class DepthwiseSeparableConv(nn.Module):
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
+        self.conv1 = DepthwiseSeparableConv(96, 48, 7, stride=2, padding=3)
+        self.conv2 = nn.Conv2d(48, 3, 5, dilation=3)
 
-        self.backbone = cct_14(
-            img_size = 512,
-            n_conv_layers = 1,
-            kernel_size = 7,
-            stride = 2,
-            padding = 3,
-            pooling_kernel_size = 3,
-            pooling_stride = 2,
-            pooling_padding = 1,
-            num_classes = 14,
-            positional_embedding = 'learnable'
-        )
+        self.backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+        for param in self.backbone.parameters():
+            param.requires_grad = False
 
-        self.out_bowel = nn.Linear(14, 1)
-        self.out_extravasation = nn.Linear(14, 1)
-        self.out_kidney = nn.Linear(14, 3)
-        self.out_liver = nn.Linear(14, 3)
-        self.out_spleen = nn.Linear(14, 3)
+        self.out_bowel = nn.Linear(1280, 1)
+        self.out_extravasation = nn.Linear(1280, 1)
+        self.out_kidney = nn.Linear(1280, 3)
+        self.out_liver = nn.Linear(1280, 3)
+        self.out_spleen = nn.Linear(1280, 3)
     
     def forward(self, x):
-        x = self.conv4(self.conv3(self.conv2(self.conv1(x))))
-        # res = torch.flatten(self.res_block(self.backbone.conv_proj(x)), 1)
         x = self.backbone(x)
-        # x = F.gelu(self.linear(torch.hstack([x, res])))
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),
