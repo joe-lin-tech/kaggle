@@ -21,7 +21,7 @@ splits = sss.split(data)
 
 writer = SummaryWriter()
 
-def train_epoch(train_iter, train_dataloader, model, optimizer, scheduler):
+def train_epoch(train_dataloader, model, optimizer, scheduler):
     model.train()
     losses = 0
 
@@ -42,9 +42,9 @@ def train_epoch(train_iter, train_dataloader, model, optimizer, scheduler):
     scheduler.step()
     # scheduler.step(losses / len(train_iter))
 
-    return losses / len(train_iter)
+    return losses / len(train_dataloader)
 
-def evaluate(val_iter, val_dataloader, model):
+def evaluate(val_dataloader, model):
     model.eval()
     losses = 0
 
@@ -56,7 +56,7 @@ def evaluate(val_iter, val_dataloader, model):
         loss = loss_fn(out, labels)
         losses += loss.item()
     
-    return losses / len(val_iter)
+    return losses / len(val_dataloader)
 
 
 for i, (train_idx, val_idx) in enumerate(splits):
@@ -87,9 +87,9 @@ for i, (train_idx, val_idx) in enumerate(splits):
 
     for epoch in range(1, EPOCHS + 1):
         start_time = timer()
-        train_loss = train_epoch(train_iter, train_dataloader, model, optimizer, scheduler)
+        train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
-        val_loss = evaluate(val_iter, val_dataloader, model)
+        val_loss = evaluate(val_dataloader, model)
         writer.add_scalars("Loss/epoch", { 'train': train_loss, 'val': val_loss }, epoch)
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
         torch.save({

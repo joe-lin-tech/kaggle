@@ -48,6 +48,8 @@ class TraumaDetector(nn.Module):
         self.backbone.features[0][0] = nn.Conv2d(N_CHANNELS, 32, 3, stride=2, padding=1)
         for param in self.backbone.features[0].parameters():
             param.requires_grad = True
+        for param in self.backbone.features[-3:].parameters():
+            param.requires_grad = True
         self.backbone.classifier[1] = nn.Linear(1280, 256)
         for param in self.backbone.classifier.parameters():
             param.requires_grad = True
