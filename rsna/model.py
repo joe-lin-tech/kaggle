@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
+from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, resnet18, ResNet18_Weights
 from params import *
 
 class CombinedLoss(nn.Module):
@@ -25,64 +25,93 @@ class CombinedLoss(nn.Module):
         return bce_loss + ce_loss + any_loss
     
 
-class DepthwiseSeparableConv(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride = 1, padding = 0):
-        super(DepthwiseSeparableConv, self).__init__()
-        self.depth_conv = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels)
-        self.point_conv = nn.Conv2d(in_channels, out_channels, 1)
-        self.batch_norm = nn.BatchNorm2d(out_channels)
-    
-    def forward(self, x):
-        return self.batch_norm(F.relu(self.point_conv(self.depth_conv(x))))
-    
-
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
-        # self.conv1 = DepthwiseSeparableConv(96, 48, 7, stride=2, padding=3)
-        # self.conv2 = nn.Conv2d(48, 3, 5, dilation=3)
 
-        self.backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        self.backbone.features[0][0] = nn.Conv2d(N_CHANNELS, 32, 3, stride=2, padding=1)
-        for param in self.backbone.features[0].parameters():
-            param.requires_grad = True
-        for param in self.backbone.features[-3:].parameters():
-            param.requires_grad = True
-        self.backbone.classifier[1] = nn.Linear(1280, 256)
-        for param in self.backbone.classifier.parameters():
-            param.requires_grad = True
+        backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+
+        self.head = nn.Sequential(
+            nn.Conv3d(64, 32, kernel_size=(7, 2, 2), stride=(5, 1, 1)),
+            nn.ReLU(),
+            nn.Conv3d(32, 16, kernel_size=(5, 2, 2), stride=(3, 1, 1)),
+            nn.ReLU(),
+            nn.Conv3d(16, 8, kernel_size=(3, 2, 2), stride=(2, 1, 1))
+        )
 
         self.out_bowel = nn.Sequential(
-            nn.Linear(256, 14),
-            nn.BatchNorm1d(14),
-            nn.Linear(14, 1)
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1)
         )
         self.out_extravasation = nn.Sequential(
-            nn.Linear(256, 14),
-            nn.BatchNorm1d(14),
-            nn.Linear(14, 1)
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1)
         )
         self.out_kidney = nn.Sequential(
-            nn.Linear(256, 14),
-            nn.BatchNorm1d(14),
-            nn.Linear(14, 3)
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3)
         )
         self.out_liver = nn.Sequential(
-            nn.Linear(256, 14),
-            nn.BatchNorm1d(14),
-            nn.Linear(14, 3)
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3)
         )
         self.out_spleen = nn.Sequential(
-            nn.Linear(256, 14),
-            nn.BatchNorm1d(14),
-            nn.Linear(14, 3)
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3)
         )
     
     def forward(self, x):
-        # x = F.relu(self.conv2(self.conv1(x)))
+        x = x.view(BATCH_SIZE * N_CHANNELS // 3, 3, x.shape[-2], x.shape[-1])
         x = self.backbone(x)
+        x = x.view(BATCH_SIZE, N_CHANNELS // 3, x.shape[-3], x.shape[-2], x.shape[-1])
+        x = self.head(x)
+        x = torch.flatten(x, 1)
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),
