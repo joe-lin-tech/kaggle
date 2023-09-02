@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, vit_b_16, ViT_B_16_Weights
+# from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, vit_b_16, ViT_B_16_Weights
+from vit_pytorch.cct import cct_14
 from params import *
 
 class CombinedLoss(nn.Module):
@@ -39,74 +40,36 @@ class DepthwiseSeparableConv(nn.Module):
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
-        self.conv1 = DepthwiseSeparableConv(N_CHANNELS, N_CHANNELS // 2, 9, stride=2)
-        self.conv2 = DepthwiseSeparableConv(N_CHANNELS // 2, N_CHANNELS // 4, 11, stride=1)
-        self.conv3 = DepthwiseSeparableConv(N_CHANNELS // 4, N_CHANNELS // 8, 11, stride=1)
-        self.conv4 = DepthwiseSeparableConv(N_CHANNELS // 8, 3, 9, stride=1)
 
-        self.res_block = nn.Sequential(
-            nn.Conv2d(768, 384, 5, stride=1),
-            nn.MaxPool2d(2, 2),
-            nn.ReLU(),
-            nn.Conv2d(384, 192, 3, stride=1),
-            nn.MaxPool2d(2, 2),
-            nn.ReLU())
+        self.backbone = cct_14(
+            img_size = 512,
+            n_conv_layers = 1,
+            kernel_size = 7,
+            stride = 2,
+            padding = 3,
+            pooling_kernel_size = 3,
+            pooling_stride = 2,
+            pooling_padding = 1,
+            num_classes = 14,
+            positional_embedding = 'learnable'
+        )
 
-        self.backbone = vit_b_16(weights=ViT_B_16_Weights.IMAGENET1K_V1)
-        for param in self.backbone.encoder.parameters():
-            param.requires_grad = False
-        self.backbone.conv_proj = nn.Conv2d(3, 768, 16, stride=16)
-        # self.backbone.conv_proj.reset_parameters()
-        # for layer in self.backbone.encoder.layers[8:]:
-        #     layer.self_attention._reset_parameters()
-        #     for param in layer.self_attention.parameters():
-        #         param.requires_grad = True
-        #     layer.mlp[0].reset_parameters()
-        #     for param in layer.mlp[0].parameters():
-        #         param.requires_grad = True
-        #     layer.mlp[3].reset_parameters()
-        #     for param in layer.mlp[3].parameters():
-        #         param.requires_grad = True
-        self.backbone.heads.head = nn.Linear(768, 384)
-
-        self.linear = nn.Linear(576, 384)
-        self.linear_bowel = nn.Sequential(
-            nn.Linear(384, 256),
-            nn.GELU(),
-            nn.Linear(256, 192))
-        self.linear_extravasation = nn.Sequential(
-            nn.Linear(384, 256),
-            nn.GELU(),
-            nn.Linear(256, 192))
-        self.linear_kidney = nn.Sequential(
-            nn.Linear(384, 256),
-            nn.GELU(),
-            nn.Linear(256, 192))
-        self.linear_liver = nn.Sequential(
-            nn.Linear(384, 256),
-            nn.GELU(),
-            nn.Linear(256, 192))
-        self.linear_spleen = nn.Sequential(
-            nn.Linear(384, 256),
-            nn.GELU(),
-            nn.Linear(256, 192))
-
-        self.out_bowel = nn.Linear(192, 1)
-        self.out_extravasation = nn.Linear(192, 1)
-        self.out_kidney = nn.Linear(192, 3)
-        self.out_liver = nn.Linear(192, 3)
-        self.out_spleen = nn.Linear(192, 3)
+        self.out_bowel = nn.Linear(14, 1)
+        self.out_extravasation = nn.Linear(14, 1)
+        self.out_kidney = nn.Linear(14, 3)
+        self.out_liver = nn.Linear(14, 3)
+        self.out_spleen = nn.Linear(14, 3)
     
     def forward(self, x):
         x = self.conv4(self.conv3(self.conv2(self.conv1(x))))
-        res = torch.flatten(self.res_block(self.backbone.conv_proj(x)), 1)
+        # res = torch.flatten(self.res_block(self.backbone.conv_proj(x)), 1)
         x = self.backbone(x)
-        x = F.gelu(self.linear(torch.hstack([x, res])))
+        # x = F.gelu(self.linear(torch.hstack([x, res])))
         out = {
-            'bowel': self.out_bowel(F.gelu(self.linear_bowel(x))),
-            'extravasation': self.out_extravasation(F.gelu(self.linear_extravasation(x))),
-            'kidney': self.out_kidney(F.gelu(self.linear_kidney(x))),
-            'liver': self.out_liver(F.gelu(self.linear_liver(x))),
-            'spleen': self.out_spleen(F.gelu(self.linear_spleen(x)))
+            'bowel': self.out_bowel(x),
+            'extravasation': self.out_extravasation(x),
+            'kidney': self.out_kidney(x),
+            'liver': self.out_liver(x),
+            'spleen': self.out_spleen(x)
         }
         return out
