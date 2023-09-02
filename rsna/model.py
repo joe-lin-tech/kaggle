@@ -53,6 +53,7 @@ class TraumaDetector(nn.Module):
         self.out_spleen = nn.Linear(1280, 3)
     
     def forward(self, x):
+        x = F.relu(self.conv2(self.conv1(x)))
         x = self.backbone(x)
         out = {
             'bowel': self.out_bowel(x),
