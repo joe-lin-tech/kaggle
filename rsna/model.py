@@ -39,12 +39,15 @@ class DepthwiseSeparableConv(nn.Module):
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
-        self.conv1 = DepthwiseSeparableConv(96, 48, 7, stride=2, padding=3)
-        self.conv2 = nn.Conv2d(48, 3, 5, dilation=3)
+        # self.conv1 = DepthwiseSeparableConv(96, 48, 7, stride=2, padding=3)
+        # self.conv2 = nn.Conv2d(48, 3, 5, dilation=3)
 
         self.backbone = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         for param in self.backbone.parameters():
             param.requires_grad = False
+        self.backbone.features[0][0] = nn.Conv2d(N_CHANNELS, 32, 3, stride=2, padding=1)
+        for param in self.backbone.features[0].parameters():
+            param.requires_grad = True
         self.backbone.classifier[1] = nn.Linear(1280, 256)
         for param in self.backbone.classifier.parameters():
             param.requires_grad = True
@@ -60,7 +63,7 @@ class TraumaDetector(nn.Module):
         self.out_spleen = nn.Linear(14, 3)
     
     def forward(self, x):
-        x = F.relu(self.conv2(self.conv1(x)))
+        # x = F.relu(self.conv2(self.conv1(x)))
         x = self.backbone(x)
         x = self.batch_norm(F.relu(self.linear(x)))
         out = {
