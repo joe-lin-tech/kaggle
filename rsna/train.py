@@ -16,7 +16,7 @@ torch.manual_seed(SEED)
 
 data = pd.read_csv(CSV_FILE)
 
-sss = KFold(n_splits=20, shuffle=True, random_state=SEED)
+sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
 
 writer = SummaryWriter()
