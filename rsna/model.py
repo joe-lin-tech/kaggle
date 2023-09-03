@@ -17,7 +17,7 @@ class CombinedLoss(nn.Module):
         ce_loss = self.organ(out['kidney'], labels[:, 2]) + self.organ(out['liver'], labels[:, 3]) + self.organ(out['spleen'], labels[:, 4])
         
         bowel, extravasation = torch.sigmoid(out['bowel']), torch.sigmoid(out['extravasation'])
-        kidney, liver, spleen = F.softmax(out['kidney']), F.softmax(out['liver']), F.softmax(out['spleen'])
+        kidney, liver, spleen = F.softmax(out['kidney'], dim=-1), F.softmax(out['liver'], dim=-1), F.softmax(out['spleen'], dim=-1)
         any_injury = torch.hstack([bowel, extravasation, kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]])
         any_injury, _ = torch.max(1 - any_injury, keepdim=True, dim=-1)
         any_loss = self.any(any_injury, labels[:, 5:6].float())
@@ -34,6 +34,8 @@ class TraumaDetector(nn.Module):
         self.backbone.eval()
         for param in self.backbone.parameters():
             param.requires_grad = False
+        for param in list(self.backbone.children())[-1].parameters():
+            param.requires_grad = True
 
         self.head = nn.Sequential(
             nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
