@@ -40,6 +40,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         losses += loss.item()
         # writer.add_scalar("Loss/step", loss, i)
     scheduler.step()
+    print(scheduler.get_lr())
     # scheduler.step(losses / len(train_iter))
 
     return losses / len(train_dataloader)
