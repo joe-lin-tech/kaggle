@@ -32,28 +32,18 @@ class TraumaDetector(nn.Module):
         backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         self.backbone.eval()
+        for param in self.backbone.parameters():
+            param.requires_grad = False
 
         self.head = nn.Sequential(
-            nn.Conv3d(512, 256, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
+            nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
-            nn.Conv3d(256, 128, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
+            nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            nn.Conv3d(128, 64, kernel_size=(3, 2, 2), stride=(2, 1, 1), padding=(1, 0, 0)),
+            nn.Conv3d(128, 64, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
-            nn.GELU()
-        )
-
-        self.fcn = nn.Sequential(
-            nn.Linear(2048, 512),
-            nn.BatchNorm1d(512),
-            nn.GELU(),
-            nn.Linear(512, 128),
-            nn.BatchNorm1d(128),
-            nn.GELU(),
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
             nn.GELU()
         )
 
@@ -70,8 +60,8 @@ class TraumaDetector(nn.Module):
         x = self.backbone(x)
         x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1]).transpose(1, 2)
         x = self.head(x)
+        x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
-        x = self.fcn(x)
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),
