@@ -78,17 +78,6 @@ for f in os.scandir('../../train_images_mini'):
                 files = os.listdir(os.path.join(root, dirname))
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
-                    # dcm = dicom.dcmread(os.path.join(root, dirname, filename))
-                    # if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
-                    #     center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
-                    #     low = center - width / 2
-                    #     high = center + width / 2
-                    #     image = (dcm.pixel_array * dcm.RescaleSlope) + dcm.RescaleIntercept
-                    #     image = np.clip(image, low, high)
-
-                    #     image = (image / np.max(image) * 255).astype(np.float32)
-                    #     image = transform(image)
-                    #     scan.append(image)
                     img = Image.open(os.path.join(root, dirname, filename))
                     img = transform(img)
                     scan.append(img)

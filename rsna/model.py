@@ -33,17 +33,23 @@ class TraumaDetector(nn.Module):
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
 
         self.head = nn.Sequential(
-            nn.Conv3d(64, 32, kernel_size=(7, 2, 2), stride=(5, 1, 1)),
+            nn.Conv3d(32, 16, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
             nn.ReLU(),
-            nn.Conv3d(32, 16, kernel_size=(5, 2, 2), stride=(3, 1, 1)),
+            nn.Conv3d(16, 8, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
             nn.ReLU(),
-            nn.Conv3d(16, 8, kernel_size=(3, 2, 2), stride=(2, 1, 1))
+            nn.Conv3d(8, 4, kernel_size=(3, 2, 2), stride=(2, 1, 1), padding=(1, 0, 0))
+        )
+
+        self.fcn = nn.Sequential(
+            nn.Linear(4096, 2048),
+            nn.GELU(),
+            nn.BatchNorm1d(2048),
+            nn.Linear(2048, 1024),
+            nn.GELU(),
+            nn.BatchNorm1d(1024)
         )
 
         self.out_bowel = nn.Sequential(
-            nn.Linear(2048, 1024),
-            nn.ReLU(),
-            nn.Dropout(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(),
@@ -54,9 +60,6 @@ class TraumaDetector(nn.Module):
             nn.Linear(64, 1)
         )
         self.out_extravasation = nn.Sequential(
-            nn.Linear(2048, 1024),
-            nn.ReLU(),
-            nn.Dropout(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(),
@@ -67,9 +70,6 @@ class TraumaDetector(nn.Module):
             nn.Linear(64, 1)
         )
         self.out_kidney = nn.Sequential(
-            nn.Linear(2048, 1024),
-            nn.ReLU(),
-            nn.Dropout(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(),
@@ -80,9 +80,6 @@ class TraumaDetector(nn.Module):
             nn.Linear(64, 3)
         )
         self.out_liver = nn.Sequential(
-            nn.Linear(2048, 1024),
-            nn.ReLU(),
-            nn.Dropout(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(),
@@ -93,9 +90,6 @@ class TraumaDetector(nn.Module):
             nn.Linear(64, 3)
         )
         self.out_spleen = nn.Sequential(
-            nn.Linear(2048, 1024),
-            nn.ReLU(),
-            nn.Dropout(),
             nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(),
@@ -108,11 +102,13 @@ class TraumaDetector(nn.Module):
     
     def forward(self, x):
         b = x.shape[0]
-        x = x.view(b * (N_CHANNELS // 3), 3, x.shape[-2], x.shape[-1])
+        c = x.shape[1]
+        x = x.view(b * (c // 3), 3, x.shape[-2], x.shape[-1])
         x = self.backbone(x)
-        x = x.view(b, N_CHANNELS // 3, x.shape[-3], x.shape[-2], x.shape[-1])
+        x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])
         x = self.head(x)
         x = torch.flatten(x, 1)
+        x = self.fcn(x)
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),
