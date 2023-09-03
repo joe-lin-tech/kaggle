@@ -12,14 +12,7 @@ from params import *
 class RSNADataset(Dataset):
     def __init__(self, split, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
                  input_type: Literal['dicom', 'jpeg'] = 'dicom'):
-        # data = pd.read_csv(csv_file)
-        # train_data, val_data = train_test_split(data, test_size=0.1, random_state=SEED, shuffle=True)
         self.patient_df = split
-        
-        # if mode == 'train':
-        #     self.patient_df = train_data
-        # else:
-        #     self.patient_df = val_data
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
@@ -39,28 +32,12 @@ class RSNADataset(Dataset):
                 files = os.listdir(os.path.join(root, dirname))
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
-                    if self.input_type == 'dicom':
-                        dcm = dicom.dcmread(os.path.join(root, dirname, filename))
-                        if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
-                            center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
-                            low = center - width / 2
-                            high = center + width / 2    
-                            image = (dcm.pixel_array * dcm.RescaleSlope) + dcm.RescaleIntercept
-                            image = np.clip(image, low, high)
-
-                            image = (image / np.max(image) * 255).astype(np.float32)
-                            scan.append(image)
-                    else:
-                        img = Image.open(os.path.join(root, dirname, filename))
-                        # if self.transform:
-                        #     img = self.transform(img)
-                        scan.append(img)
+                    img = Image.open(os.path.join(root, dirname, filename))
+                    scan.append(img)
                 images.append(np.stack(scan))
-        # input = np.stack(images)
         input = images[0] # fix sample selection
         if self.transform:
             input = self.transform(torch.tensor(input))
-        # label = np.repeat(self.patient_df.iloc[idx].to_numpy()[1:][np.newaxis, :], images.shape[0], axis=0)
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
                            0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])

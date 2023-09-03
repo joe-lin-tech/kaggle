@@ -34,72 +34,41 @@ class TraumaDetector(nn.Module):
         self.backbone.eval()
 
         self.head = nn.Sequential(
-            nn.Conv3d(32, 16, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
-            nn.ReLU(),
-            nn.Conv3d(16, 8, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
-            nn.ReLU(),
-            nn.Conv3d(8, 4, kernel_size=(3, 2, 2), stride=(2, 1, 1), padding=(1, 0, 0))
+            nn.Conv3d(512, 256, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
+            nn.BatchNorm3d(256),
+            nn.GELU(),
+            nn.Conv3d(256, 128, kernel_size=(3, 2, 2), stride=(2, 1, 1)),
+            nn.BatchNorm3d(128),
+            nn.GELU(),
+            nn.Conv3d(128, 64, kernel_size=(3, 2, 2), stride=(2, 1, 1), padding=(1, 0, 0)),
+            nn.BatchNorm3d(64),
+            nn.GELU()
         )
 
         self.fcn = nn.Sequential(
-            nn.Linear(4096, 2048),
+            nn.Linear(2048, 512),
+            nn.BatchNorm1d(512),
             nn.GELU(),
-            nn.Linear(2048, 1024),
+            nn.Linear(512, 128),
+            nn.BatchNorm1d(128),
             nn.GELU(),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.GELU()
         )
 
-        self.out_bowel = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
-        )
-        self.out_extravasation = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 1)
-        )
-        self.out_kidney = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 3)
-        )
-        self.out_liver = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 3)
-        )
-        self.out_spleen = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 3)
-        )
+        self.out_bowel = nn.Linear(64, 1)
+        self.out_extravasation = nn.Linear(64, 1)
+        self.out_kidney = nn.Linear(64, 3)
+        self.out_liver = nn.Linear(64, 3)
+        self.out_spleen = nn.Linear(64, 3)
     
     def forward(self, x):
         b = x.shape[0]
         c = x.shape[1]
         x = x.view(b * (c // 3), 3, x.shape[-2], x.shape[-1])
         x = self.backbone(x)
-        x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])
+        x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1]).transpose(1, 2)
         x = self.head(x)
         x = torch.flatten(x, 1)
         x = self.fcn(x)

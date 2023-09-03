@@ -34,7 +34,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         optimizer.zero_grad()
         loss = loss_fn(out, labels)
         loss.backward()
-        plot_gradient(model.named_parameters())
+        # plot_gradient(model.named_parameters())
         optimizer.step()
 
         losses += loss.item()
@@ -78,9 +78,9 @@ for i, (train_idx, val_idx) in enumerate(splits):
     model = TraumaDetector()
     model.to(DEVICE)
 
-    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
 
     loss_fn = CombinedLoss()
