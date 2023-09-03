@@ -49,9 +49,24 @@ class TraumaDetector(nn.Module):
 
         self.out_bowel = nn.Linear(64, 1)
         self.out_extravasation = nn.Linear(64, 1)
-        self.out_kidney = nn.Linear(64, 3)
-        self.out_liver = nn.Linear(64, 3)
-        self.out_spleen = nn.Linear(64, 3)
+        self.out_kidney = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.GELU(),
+            nn.Linear(32, 3)
+        )
+        self.out_liver = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.GELU(),
+            nn.Linear(32, 3)
+        )
+        self.out_spleen = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.GELU(),
+            nn.Linear(32, 3)
+        )
     
     def forward(self, x):
         b = x.shape[0]
