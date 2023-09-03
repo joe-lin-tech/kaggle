@@ -43,10 +43,8 @@ class TraumaDetector(nn.Module):
         self.fcn = nn.Sequential(
             nn.Linear(4096, 2048),
             nn.GELU(),
-            nn.BatchNorm1d(2048),
             nn.Linear(2048, 1024),
             nn.GELU(),
-            nn.BatchNorm1d(1024)
         )
 
         self.out_bowel = nn.Sequential(
