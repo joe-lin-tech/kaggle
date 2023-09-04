@@ -69,8 +69,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
         # torchvision.transforms.RandomRotation(degrees=7.5)
     ]), input_type='jpeg')
     train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
-    # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler)
-    train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
+    train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
+    # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256))
@@ -84,7 +84,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.96)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
 
     loss_fn = CombinedLoss()
 

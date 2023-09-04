@@ -55,9 +55,13 @@ class RSNADataset(Dataset):
         
         weights = []
         for i, row in self.patient_df.iterrows():
-            weight = 0
-            for f in fieldnames:
-                weight += raw_weights[f] * row[f] * (1 if 'healthy' in f else 500)
-            weights.append(weight)
+            if row['bowel_healthy'] == 1:
+                weights.append(raw_weights['bowel_healthy'])
+            else:
+                weights.append(raw_weights['bowel_injury'])
+            # weight = 0
+            # for f in fieldnames:
+            #     weight += raw_weights[f] * row[f] * (1 if 'healthy' in f else 500)
+            # weights.append(weight)
         
         return weights
