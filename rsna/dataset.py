@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
-import pandas as pd
-import pydicom as dicom
+import matplotlib.pyplot as plt
 import os
 import numpy as np
 from PIL import Image
@@ -51,17 +50,21 @@ class RSNADataset(Dataset):
             'liver_healthy', 'liver_low', 'liver_high',
             'spleen_healthy', 'spleen_low', 'spleen_high'
         ]
+
+        # self.patient_df['set'] = self.patient_df.apply(
+        #     lambda row: sum([(2 ** i) * row[f] for i, f in enumerate(fieldnames)]), axis=1)
+
+        # self.patient_df['set'].hist(bins=np.unique(self.patient_df['set']))
+        # self.patient_df['set'].value_counts().sort_values().plot(kind='bar') 
+        # plt.show(block=True)
+
         raw_weights = { f: 1 / self.patient_df[f].value_counts()[1] for f in fieldnames }
         
         weights = []
         for i, row in self.patient_df.iterrows():
-            if row['bowel_healthy'] == 1:
-                weights.append(raw_weights['bowel_healthy'])
+            if row['extravasation_healthy'] == 1:
+                weights.append(raw_weights['extravasation_healthy'])
             else:
-                weights.append(raw_weights['bowel_injury'])
-            # weight = 0
-            # for f in fieldnames:
-            #     weight += raw_weights[f] * row[f] * (1 if 'healthy' in f else 500)
-            # weights.append(weight)
+                weights.append(raw_weights['extravasation_injury'])
         
         return weights
