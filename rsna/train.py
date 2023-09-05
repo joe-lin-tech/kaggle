@@ -65,8 +65,9 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256)),
         torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.RandomVerticalFlip()
-        # torchvision.transforms.RandomRotation(degrees=7.5)
+        torchvision.transforms.RandomVerticalFlip(),
+        torchvision.transforms.RandomRotation(degrees=10),
+        torchvision.transforms.RandomResizedCrop((256, 256))
     ]), input_type='jpeg')
     train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
