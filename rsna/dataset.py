@@ -10,14 +10,14 @@ from params import *
 
 class RSNADataset(Dataset):
     def __init__(self, split, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
-                 input_type: Literal['dicom', 'jpeg'] = 'dicom'):
+                 input_type: Literal['dicom', 'jpeg'] = 'dicom', category: str = None):
         self.patient_df = split
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
         self.input_type = input_type
         if mode == 'train':
-            self.weights = self.set_weights()
+            self.weights = self.set_weights(category)
     
     def __len__(self):
         return len(self.patient_df)
@@ -42,7 +42,7 @@ class RSNADataset(Dataset):
                            0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
         return input, label
     
-    def set_weights(self):
+    def set_weights(self, category):
         fieldnames = [
             'bowel_healthy', 'bowel_injury',
             'extravasation_healthy', 'extravasation_injury',
@@ -62,9 +62,9 @@ class RSNADataset(Dataset):
         
         weights = []
         for i, row in self.patient_df.iterrows():
-            if row['extravasation_healthy'] == 1:
-                weights.append(raw_weights['extravasation_healthy'])
+            if row[f'{category}_healthy'] == 1:
+                weights.append(raw_weights[f'{category}_healthy'])
             else:
-                weights.append(raw_weights['extravasation_injury'])
+                weights.append(raw_weights[f'{category}_injury'])
         
         return weights

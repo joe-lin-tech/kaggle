@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import torch
 import torchvision
 import torch.nn as nn
@@ -6,6 +8,7 @@ from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
+from argparse import ArgumentParser
 from sklearn.model_selection import KFold
 from grad import plot_gradient
 from tqdm import tqdm
@@ -13,6 +16,11 @@ from timeit import default_timer as timer
 from params import *
 
 torch.manual_seed(SEED)
+
+parser = ArgumentParser(prog='train.py')
+parser.add_argument('-c', '--category')
+
+args = parser.parse_args()
 
 data = pd.read_csv(CSV_FILE)
 
@@ -68,7 +76,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         torchvision.transforms.RandomVerticalFlip(),
         torchvision.transforms.RandomRotation(degrees=10),
         torchvision.transforms.RandomResizedCrop((256, 256))
-    ]), input_type='jpeg')
+    ]), input_type='jpeg', category=args.category)
     train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
