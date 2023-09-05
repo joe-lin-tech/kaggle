@@ -50,11 +50,13 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            nn.Dropout(0.4),
+            # nn.Dropout(0.4),
+            DropBlock3d(p=0.4, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
-            nn.Dropout(0.4)
+            # nn.Dropout(0.4)
+            DropBlock3d(p=0.4, block_size=3)
         )
 
         self.out_bowel = nn.Linear(64, 1)
@@ -63,21 +65,21 @@ class TraumaDetector(nn.Module):
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.25),
             nn.Linear(32, 3)
         )
         self.out_liver = nn.Sequential(
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.25),
             nn.Linear(32, 3)
         )
         self.out_spleen = nn.Sequential(
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.25),
             nn.Linear(32, 3)
         )
         # self.out_any = nn.Linear(64, 1)
