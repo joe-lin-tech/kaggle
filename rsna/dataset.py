@@ -16,7 +16,7 @@ class RSNADataset(Dataset):
         self.transform = transform
         self.mode = mode
         self.input_type = input_type
-        if mode == 'train':
+        if mode == 'train' and category:
             self.weights = self.set_weights(category)
     
     def __len__(self):
