@@ -82,7 +82,7 @@ class TraumaDetector(nn.Module):
             nn.Dropout(0.25),
             nn.Linear(32, 3)
         )
-        # self.out_any = nn.Linear(64, 1)
+        self.out_any = nn.Linear(64, 1)
     
     def forward(self, x):
         b = x.shape[0]
@@ -99,6 +99,6 @@ class TraumaDetector(nn.Module):
             'kidney': self.out_kidney(x),
             'liver': self.out_liver(x),
             'spleen': self.out_spleen(x),
-            # 'any': self.out_any(x)
+            'any': self.out_any(x)
         }
         return out
