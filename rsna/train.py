@@ -77,7 +77,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         torchvision.transforms.RandomRotation(degrees=10),
         torchvision.transforms.RandomResizedCrop((512, 512))
     ]), input_type='jpeg', category=args.category)
-    train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
+    # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 

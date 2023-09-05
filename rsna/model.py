@@ -43,17 +43,17 @@ class TraumaDetector(nn.Module):
 
         self.head = nn.Sequential(
             nn.Conv3d(512, 384, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(256),
+            nn.BatchNorm3d(384),
             nn.GELU(),
             nn.Dropout(0.4),
             DropBlock3d(p=0.4, block_size=3),
             nn.Conv3d(384, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(128),
+            nn.BatchNorm3d(256),
             nn.GELU(),
             nn.Dropout(0.4),
             # DropBlock3d(p=0.4, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(64),
+            nn.BatchNorm3d(128),
             nn.GELU(),
             nn.Dropout(0.4),
             # DropBlock3d(p=0.4, block_size=3)
