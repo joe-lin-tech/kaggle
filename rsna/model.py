@@ -42,21 +42,25 @@ class TraumaDetector(nn.Module):
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(512, 384, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
-            # nn.Dropout(0.4),
+            nn.Dropout(0.4),
             DropBlock3d(p=0.4, block_size=3),
-            nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(384, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            # nn.Dropout(0.4),
-            DropBlock3d(p=0.4, block_size=3),
+            nn.Dropout(0.4),
+            # DropBlock3d(p=0.4, block_size=3),
+            nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.BatchNorm3d(64),
+            nn.GELU(),
+            nn.Dropout(0.4),
+            # DropBlock3d(p=0.4, block_size=3)
             nn.Conv3d(128, 64, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
-            # nn.Dropout(0.4)
-            DropBlock3d(p=0.4, block_size=3)
+            nn.Dropout(0.4)
         )
 
         self.out_bowel = nn.Linear(64, 1)

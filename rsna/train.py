@@ -71,25 +71,25 @@ def evaluate(val_dataloader, model):
 for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
-        torchvision.transforms.Resize((256, 256)),
+        torchvision.transforms.Resize((512, 512)),
         torchvision.transforms.RandomHorizontalFlip(),
         torchvision.transforms.RandomVerticalFlip(),
         torchvision.transforms.RandomRotation(degrees=10),
-        torchvision.transforms.RandomResizedCrop((256, 256))
+        torchvision.transforms.RandomResizedCrop((512, 512))
     ]), input_type='jpeg', category=args.category)
     train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
-        torchvision.transforms.Resize((256, 256))
+        torchvision.transforms.Resize((512, 512))
     ]), mode='val', input_type='jpeg')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True)
 
     model = TraumaDetector()
     model.to(DEVICE)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-3)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
