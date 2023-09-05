@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, resnet18, ResNet18_Weights
+from torchvision.ops import DropBlock2d, DropBlock3d
 from params import *
 
 class CombinedLoss(nn.Module):
@@ -32,7 +33,9 @@ class TraumaDetector(nn.Module):
 
         backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        self.backbone.eval()
+        for i, block in enumerate(self.backbone[4:]):
+            self.backbone[i + 4] = nn.Sequential(block[0], DropBlock2d(p=0.2, block_size=3), block[1])
+        # self.backbone.eval()
         for param in self.backbone.parameters():
             param.requires_grad = False
         for param in list(self.backbone.children())[-1].parameters():
@@ -42,7 +45,8 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
-            nn.Dropout(0.4),
+            # nn.Dropout(0.4),
+            DropBlock3d(p=0.4, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
