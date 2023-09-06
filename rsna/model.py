@@ -125,7 +125,7 @@ class TraumaDetector(nn.Module):
         # self.out_any = nn.Linear(64, 1)
     
     def forward(self, x):
-        self.mask_predictor(x)
+        # self.mask_predictor(x)
         b = x.shape[0]
         c = x.shape[1]
         x = x.view(b * (c // 3), 3, x.shape[-2], x.shape[-1])
