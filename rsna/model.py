@@ -35,6 +35,7 @@ class MaskPredictor(nn.Module):
                 #     self.show_mask(mask['segmentation'], plt.gca())
                 # plt.axis('off')
                 # plt.show()
+        return x
 
     def show_mask(self, mask, ax):
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
@@ -70,7 +71,7 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        # self.mask_predictor = MaskPredictor()
+        self.mask_predictor = MaskPredictor()
 
         backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
@@ -125,7 +126,7 @@ class TraumaDetector(nn.Module):
         # self.out_any = nn.Linear(64, 1)
     
     def forward(self, x):
-        # self.mask_predictor(x)
+        x = self.mask_predictor(x)
         b = x.shape[0]
         c = x.shape[1]
         x = x.view(b * (c // 3), 3, x.shape[-2], x.shape[-1])
