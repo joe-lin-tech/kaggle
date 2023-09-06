@@ -23,7 +23,7 @@ class MaskPredictor(nn.Module):
 
     def forward(self, x):
         for b in range(x.shape[0]):
-            size = 12
+            size = 36 # 12
             for i in range(size // 2, N_CHANNELS - (size // 2), size):
                 image = x[b, i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
                 # plt.imshow(image[:, :, 1], cmap='bone')
@@ -87,17 +87,17 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
-            nn.Dropout(0.4),
+            # nn.Dropout(0.4),
             # DropBlock3d(p=0.4, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            nn.Dropout(0.4),
+            # nn.Dropout(0.4),
             # DropBlock3d(p=0.4, block_size=3)
             nn.Conv3d(128, 64, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
-            nn.Dropout(0.4)
+            # nn.Dropout(0.4)
         )
 
         # self.out_bowel = nn.Linear(64, 1)
