@@ -3,7 +3,7 @@
 import torch
 import torchvision
 import torch.nn as nn
-from dataset import RSNADataset
+from dataset import RSNADataset, get_mean_std
 from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
@@ -67,7 +67,7 @@ def evaluate(val_dataloader, model):
     losses = 0
 
     for inputs, labels in tqdm(val_dataloader):
-        inputs = inputs.to(DEVICE).float()
+        inputs = inputs.to(DEVICE)
         labels = labels.to(DEVICE)
 
         out = model(inputs)
@@ -81,6 +81,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256)),
+        torchvision.transforms.Normalize(mean=40.5436, std=64.4406),
         torchvision.transforms.RandomHorizontalFlip(),
         torchvision.transforms.RandomVerticalFlip(),
         torchvision.transforms.RandomRotation(degrees=10),
@@ -91,9 +92,12 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
-        torchvision.transforms.Resize((256, 256))
+        torchvision.transforms.Resize((256, 256)),
+        torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
     ]), mode='val', input_type='jpeg')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True)
+
+    # print(get_mean_std(train_dataloader, val_dataloader))
 
     model = TraumaDetector()
     model.to(DEVICE)

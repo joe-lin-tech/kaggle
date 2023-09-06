@@ -5,6 +5,7 @@ import os
 import numpy as np
 from PIL import Image
 # from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 from typing import Literal
 from params import *
 
@@ -32,11 +33,11 @@ class RSNADataset(Dataset):
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
                     img = Image.open(os.path.join(root, dirname, filename))
-                    scan.append(img)
+                    scan.append(np.array(img, dtype=np.float32))
                 images.append(np.stack(scan))
         input = images[0] # fix sample selection
         if self.transform:
-            input = self.transform(torch.tensor(input))
+            input = self.transform(torch.tensor(input).float())
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
                            0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
@@ -68,3 +69,27 @@ class RSNADataset(Dataset):
                 weights.append(raw_weights[f'{category}_injury'])
         
         return weights
+
+def get_mean_std(train_dataloader, val_dataloader):
+    num_pixels = 0
+    mean = 0.0
+    std = 0.0
+
+    for input, _ in tqdm(train_dataloader):
+        batch_size, num_channels, height, width = input.shape
+        input = input.view(batch_size * num_channels, 1, height, width)
+        num_pixels += input.shape[0] * height * width
+        mean += torch.sum(input, axis=(0, 2, 3), dtype=torch.float32)
+        std += torch.sum((input ** 2), axis=(0, 2, 3))
+
+    for input, _ in tqdm(val_dataloader):
+        batch_size, num_channels, height, width = input.shape
+        input = input.view(batch_size * num_channels, 1, height, width)
+        num_pixels += input.shape[0] * height * width
+        mean += torch.sum(input, axis=(0, 2, 3), dtype=torch.float32)
+        std += torch.sum((input ** 2), axis=(0, 2, 3))
+    
+    mean /= num_pixels
+    std = torch.sqrt(std / num_pixels - mean ** 2)
+
+    return mean, std
