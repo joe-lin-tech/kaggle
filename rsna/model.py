@@ -35,9 +35,6 @@ class MaskPredictor(nn.Module):
                 #     self.show_mask(mask['segmentation'], plt.gca())
                 # plt.axis('off')
                 # plt.show()
-                plt.imshow(x[b, i, :, :], cmap='bone')
-                plt.axis('off')
-                plt.show()
         return x
 
     def show_mask(self, mask, ax):
