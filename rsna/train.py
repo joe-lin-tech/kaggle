@@ -24,6 +24,15 @@ args = parser.parse_args()
 
 data = pd.read_csv(CSV_FILE)
 
+# bowel_healthy = data['bowel_healthy'].mean(axis=0)
+# bowel_injury = data['bowel_injury'].mean(axis=0) * 2
+# bowel = bowel_healthy + bowel_injury
+# print(bowel_healthy / bowel, bowel_injury / bowel)
+# extravasation_healthy = data['extravasation_healthy'].mean(axis=0)
+# extravasation_injury = data['extravasation_injury'].mean(axis=0) * 6
+# extravasation = extravasation_healthy + extravasation_injury
+# print(extravasation_healthy / extravasation, extravasation_injury / extravasation)
+
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
 

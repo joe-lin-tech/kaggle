@@ -39,8 +39,8 @@ def predict(model, batch_id, batch_input):
     batch_input = batch_input.to(DEVICE)
 
     out = model(batch_input)
-    bowel = torch.sigmoid(out['bowel'])
-    extravasation = torch.sigmoid(out['extravasation'])
+    # bowel = torch.sigmoid(out['bowel'])
+    # extravasation = torch.sigmoid(out['extravasation'])
     kidney = F.softmax(out['kidney'], dim=-1)
     liver = F.softmax(out['liver'], dim=-1)
     spleen = F.softmax(out['spleen'], dim=-1)
@@ -50,10 +50,10 @@ def predict(model, batch_id, batch_input):
         for i in range(len(batch_id)):
             result = {
                 'patient_id': batch_id[i],
-                'bowel_healthy': 1 - bowel[i].item(),
-                'bowel_injury': bowel[i].item(),
-                'extravasation_healthy': 1 - extravasation[i].item(),
-                'extravasation_injury': extravasation[i].item(),
+                'bowel_healthy': 0.9601370289629398, # 1 - bowel[i].item(),
+                'bowel_injury': 0.03986297103706011, # bowel[i].item(),
+                'extravasation_healthy': 0.7106341933928141, # 1 - extravasation[i].item(),
+                'extravasation_injury': 0.2893658066071859, # extravasation[i].item(),
                 'kidney_healthy': kidney[i][0].item(),
                 'kidney_low': kidney[i][1].item(),
                 'kidney_high': kidney[i][2].item(),
