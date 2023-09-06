@@ -3,7 +3,45 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, resnet18, ResNet18_Weights
 from torchvision.ops import DropBlock2d, DropBlock3d
+from SAM_Med2D.segment_anything import sam_model_registry
+from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
+import numpy as np
+import matplotlib.pyplot as plt
+from argparse import Namespace
 from params import *
+
+
+class MaskPredictor(nn.Module):
+    def __init__(self):
+        super(MaskPredictor, self).__init__()
+        args = Namespace()
+        args.image_size = 256
+        args.encoder_adapter = True
+        args.sam_checkpoint = MASK_MODEL
+        model = sam_model_registry["vit_b"](args).to(DEVICE)
+        self.mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.4, stability_score_thresh=0.8)
+
+    def forward(self, x):
+        for b in range(x.shape[0]):
+            size = 12
+            for i in range(size // 2, N_CHANNELS - (size // 2), size):
+                image = x[b, i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
+                # plt.imshow(image[:, :, 1], cmap='bone')
+                masks = self.mask_generator.generate(image)
+                mask = np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0.2)
+                x[b, i - (size // 2):i + (size // 2), :, :] *= mask
+                # self.show_mask(mask, plt.gca())
+                # for mask in masks:
+                #     self.show_mask(mask['segmentation'], plt.gca())
+                # plt.axis('off')
+                # plt.show()
+
+    def show_mask(self, mask, ax):
+        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+        h, w = mask.shape[-2:]
+        mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
+        ax.imshow(mask_image)
+
 
 class CombinedLoss(nn.Module):
     def __init__(self):
@@ -31,23 +69,20 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
+        # self.mask_predictor = MaskPredictor()
+
         backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for i, block in enumerate(self.backbone[4:]):
-            self.backbone[i + 4] = nn.Sequential(block[0], DropBlock2d(p=0.2, block_size=3), block[1])
+        # for i, block in enumerate(self.backbone[4:]):
+        #     self.backbone[i + 4] = nn.Sequential(block[0], DropBlock2d(p=0.2, block_size=3), block[1])
         # self.backbone.eval()
         for param in self.backbone.parameters():
             param.requires_grad = False
-        for param in list(self.backbone.children())[-1].parameters():
+        for param in self.backbone[-1].parameters():
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(512, 384, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(384),
-            nn.GELU(),
-            nn.Dropout(0.4),
-            DropBlock3d(p=0.4, block_size=3),
-            nn.Conv3d(384, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
             nn.Dropout(0.4),
@@ -89,6 +124,7 @@ class TraumaDetector(nn.Module):
         # self.out_any = nn.Linear(64, 1)
     
     def forward(self, x):
+        self.mask_predictor(x)
         b = x.shape[0]
         c = x.shape[1]
         x = x.view(b * (c // 3), 3, x.shape[-2], x.shape[-1])
