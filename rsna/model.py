@@ -28,13 +28,16 @@ class MaskPredictor(nn.Module):
                 image = x[b, i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
                 # plt.imshow(image[:, :, 1], cmap='bone')
                 masks = self.mask_generator.generate(image)
-                mask = torch.tensor(np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0.2)).to(x.device)
+                mask = torch.tensor(np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0.05)).to(x.device)
                 x[b, i - (size // 2):i + (size // 2), :, :] *= mask
                 # self.show_mask(mask, plt.gca())
                 # for mask in masks:
                 #     self.show_mask(mask['segmentation'], plt.gca())
                 # plt.axis('off')
                 # plt.show()
+                plt.imshow(x[b, i, :, :], cmap='bone')
+                plt.axis('off')
+                plt.show()
         return x
 
     def show_mask(self, mask, ax):
