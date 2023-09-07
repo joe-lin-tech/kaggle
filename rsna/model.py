@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, resnet18, ResNet18_Weights
+from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, resnet50, ResNet50_Weights
 from torchvision.ops import DropBlock2d, DropBlock3d
 from SAM_Med2D.segment_anything import sam_model_registry
 from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
@@ -73,7 +73,7 @@ class TraumaDetector(nn.Module):
 
         self.mask_predictor = MaskPredictor()
 
-        backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+        backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         # for i, block in enumerate(self.backbone[4:]):
         #     self.backbone[i + 4] = nn.Sequential(block[0], DropBlock2d(p=0.2, block_size=3), block[1])
@@ -84,7 +84,7 @@ class TraumaDetector(nn.Module):
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(512, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(2048, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
             # nn.Dropout(0.4),
