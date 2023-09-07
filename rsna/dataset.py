@@ -11,14 +11,14 @@ from params import *
 
 class RSNADataset(Dataset):
     def __init__(self, split, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
-                 input_type: Literal['dicom', 'jpeg'] = 'dicom', category: str = None):
+                 input_type: Literal['dicom', 'jpeg'] = 'dicom'):
         self.patient_df = split
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
         self.input_type = input_type
-        if mode == 'train' and category:
-            self.weights = self.set_weights(category)
+        # if mode == 'train':
+        #     self.weights = self.set_weights(category)
     
     def __len__(self):
         return len(self.patient_df)
