@@ -82,7 +82,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         torchvision.transforms.Normalize(mean=40.5436, std=64.4406),
         torchvision.transforms.RandomHorizontalFlip(),
         torchvision.transforms.RandomVerticalFlip(),
-        torchvision.transforms.RandomRotation(degrees=10),
+        # torchvision.transforms.RandomRotation(degrees=10),
         torchvision.transforms.RandomResizedCrop((256, 256))
     ]), input_type='jpeg')
     # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
@@ -100,11 +100,12 @@ for i, (train_idx, val_idx) in enumerate(splits):
     model = TraumaDetector()
     model.to(DEVICE)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-3)
-    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
+    # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
+    scheduler = None
 
     loss_fn = CombinedLoss()
 
