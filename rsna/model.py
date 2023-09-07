@@ -75,7 +75,7 @@ class TraumaDetector(nn.Module):
 
         self.mask_predictor = MaskPredictor()
 
-        backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+        backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         # for i, block in enumerate(self.backbone[4:]):
         #     self.backbone[i + 4] = nn.Sequential(block[0], DropBlock2d(p=0.2, block_size=3), block[1])
@@ -86,12 +86,12 @@ class TraumaDetector(nn.Module):
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(2048, 256, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.GELU(),
             nn.Dropout(0.4),
             # DropBlock3d(p=0.4, block_size=3),
-            nn.Conv3d(256, 128, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
             nn.Dropout(0.4),
@@ -104,27 +104,9 @@ class TraumaDetector(nn.Module):
 
         # self.out_bowel = nn.Linear(64, 1)
         # self.out_extravasation = nn.Linear(64, 1)
-        self.out_kidney = nn.Sequential(
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),
-            nn.GELU(),
-            nn.Dropout(0.25),
-            nn.Linear(32, 3)
-        )
-        self.out_liver = nn.Sequential(
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),
-            nn.GELU(),
-            nn.Dropout(0.25),
-            nn.Linear(32, 3)
-        )
-        self.out_spleen = nn.Sequential(
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),
-            nn.GELU(),
-            nn.Dropout(0.25),
-            nn.Linear(32, 3)
-        )
+        self.out_kidney = nn.Linear(64, 3)
+        self.out_liver = nn.Linear(64, 3)
+        self.out_spleen = nn.Linear(64, 3)
         # self.out_any = nn.Linear(64, 1)
     
     def forward(self, x):
