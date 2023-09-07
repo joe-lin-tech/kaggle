@@ -1,6 +1,6 @@
 import torch
 
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 N_CHANNELS = 72
 
 SEED = 5

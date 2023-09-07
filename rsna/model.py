@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights, resnet50, ResNet50_Weights
+from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
 from torchvision.ops import DropBlock2d, DropBlock3d
 from SAM_Med2D.segment_anything import sam_model_registry
 from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
@@ -44,6 +44,34 @@ class MaskPredictor(nn.Module):
         ax.imshow(mask_image)
 
 
+class SlicePredictor(nn.Module):
+    def __init__(self):
+        super(SlicePredictor, self).__init__()
+        backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
+        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+
+        self.layer_norm = nn.LayerNorm(512)
+        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
+
+        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+
+        self.linear = nn.Linear(512, 1)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        x = x.view(b * (c // 3), 3, h, w)
+        x = self.backbone(x)
+        x = F.adaptive_avg_pool2d(x, 1)
+        x = torch.flatten(x, 1)
+        x = torch.reshape(x, (b, (c // 3), 512))
+        x = self.layer_norm(x) + self.pos_embedding
+        x = self.encoder(x)
+        x = torch.squeeze(self.linear(x), dim=-1)
+        x = torch.sigmoid(x)
+        return torch.squeeze(F.interpolate(x.unsqueeze(1), size=c, mode='linear'), dim=1)
+
+
 class CombinedLoss(nn.Module):
     def __init__(self):
         super(CombinedLoss, self).__init__()
@@ -73,13 +101,11 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        self.mask_predictor = MaskPredictor()
+        # self.mask_predictor = MaskPredictor()
+        self.slice_predictor = SlicePredictor()
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        # for i, block in enumerate(self.backbone[4:]):
-        #     self.backbone[i + 4] = nn.Sequential(block[0], DropBlock2d(p=0.2, block_size=3), block[1])
-        # self.backbone.eval()
         for param in self.backbone.parameters():
             param.requires_grad = False
         for param in self.backbone[-1].parameters():
@@ -111,11 +137,21 @@ class TraumaDetector(nn.Module):
     
     def forward(self, x):
         # x = self.mask_predictor(x)
-        b = x.shape[0]
-        c = x.shape[1]
-        x = x.view(b * (c // 3), 3, x.shape[-2], x.shape[-1])
+        b, c, h, w = x.shape
+        prob = self.slice_predictor(x)
+        for _ in range(b):
+            indices = torch.nonzero((prob[_] > 0.5).byte(), as_tuple=True)[0]
+            start, end = 0, N_CHANNELS
+            if indices.shape[0] > 0:
+                start, end = indices.min().item(), indices.max().item()
+            x[_] = torch.squeeze(F.interpolate(
+                torch.unsqueeze(torch.unsqueeze(x[_, start:end], dim=0), dim=0),
+                size=(c, h, w), mode='trilinear'
+            ), dim=(0, 1))
+
+        x = torch.reshape(x, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
-        x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1]).transpose(1, 2)
+        x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
