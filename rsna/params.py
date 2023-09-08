@@ -1,6 +1,7 @@
 import torch
 
 BATCH_SIZE = 8
+ACCUM_ITER = 8
 N_CHANNELS = 72
 N_WORKERS = 4
 

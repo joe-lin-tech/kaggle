@@ -47,13 +47,15 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
 
         out = model(inputs)
 
-        optimizer.zero_grad()
         loss = loss_fn(out, labels)
         loss.backward()
         # plot_gradient(model.named_parameters())
-        optimizer.step()
 
-        losses += loss.item()
+        if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
+            optimizer.zero_grad()
+            optimizer.step()
+
+        losses += loss.item() / ACCUM_ITER
         # writer.add_scalar("Loss/step", loss, i)
     scheduler.step()
     print(scheduler.get_last_lr())
