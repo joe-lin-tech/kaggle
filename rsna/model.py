@@ -49,6 +49,10 @@ class SlicePredictor(nn.Module):
         super(SlicePredictor, self).__init__()
         backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        for param in self.backbone[-1].parameters():
+            param.requires_grad = True
 
         self.layer_norm = nn.LayerNorm(512)
         self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
@@ -107,6 +111,10 @@ class TraumaDetector(nn.Module):
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        for param in self.backbone[-1].parameters():
+            param.requires_grad = True
 
         self.head = nn.Sequential(
             nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
