@@ -4,7 +4,7 @@ BATCH_SIZE = 8
 N_CHANNELS = 72
 N_WORKERS = 4
 
-SEED = 5
+SEED = 0
 
 LEARNING_RATE = 0.001
 EPOCHS = 25
@@ -15,4 +15,5 @@ ROOT_DIR = '../../train_images_mini' # '/Volumes/SSD/rsna/train_images_mini_256x
 MASK_MODEL = '../../sam-med2d_b.pth' # '/Volumes/SSD/rsna/sam-med2d_b.pth'
 
 CHECKPOINT_FOLDER = 'models/checkpoint'
+CHECKPOINT_FILE = 'models/rsna_checkpoint.pt'
 SAVE_FILE = 'models/rsna.pt'

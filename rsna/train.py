@@ -17,8 +17,9 @@ from params import *
 
 torch.manual_seed(SEED)
 
-# parser = ArgumentParser(prog='train.py')
-# args = parser.parse_args()
+parser = ArgumentParser(prog='train.py')
+parser.add_argument('-c', '--checkpoint', action='store_true')
+args = parser.parse_args()
 
 data = pd.read_csv(CSV_FILE)
 
@@ -98,10 +99,15 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # print(get_mean_std(train_dataloader, val_dataloader))
 
     model = TraumaDetector()
+    if args.checkpoint:
+        checkpoint = torch.load(CHECKPOINT_FILE)
+        model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
 
     # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-3)
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    if args.checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
@@ -109,7 +115,10 @@ for i, (train_idx, val_idx) in enumerate(splits):
 
     loss_fn = CombinedLoss()
 
-    for epoch in range(1, EPOCHS + 1):
+    start, end = 1, EPOCHS + 1
+    if args.checkpoint:
+        start, end = checkpoint['epoch'] + 1, checkpoint['epoch'] + EPOCHS + 1
+    for epoch in range(start, end):
         start_time = timer()
         train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
@@ -121,6 +130,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
             'train_loss': train_loss,
             'val_loss': val_loss
         }, CHECKPOINT_FOLDER + f'/rsna_split{i}_epoch{epoch}.pt')

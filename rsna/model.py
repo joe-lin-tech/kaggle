@@ -32,17 +32,20 @@ class MaskPredictor(nn.Module):
             nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.GELU(),
+            nn.Dropout(),
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.GELU(),
+            nn.Dropout(),
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
-            nn.GELU()
+            nn.GELU(),
+            nn.Dropout()
         )
 
     def forward(self, x):
         for b in range(x.shape[0]):
-            size = 24 # 12
+            size = 6 # 12
             for i in range(size // 2, N_CHANNELS - (size // 2), size):
                 image = x[b, i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
                 # plt.imshow(image[:, :, 1], cmap='bone')
@@ -121,7 +124,7 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            nn.Dropout(0.5),
+            # nn.Dropout(),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
@@ -132,6 +135,7 @@ class TraumaDetector(nn.Module):
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.GELU(),
+            nn.Dropout(),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU()
