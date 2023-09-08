@@ -77,9 +77,9 @@ class CombinedLoss(nn.Module):
         super(CombinedLoss, self).__init__()
         # self.bowel = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([2]).to(DEVICE))
         # self.extravasation = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
-        self.kidney = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.05)
-        self.liver = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.05)
-        self.spleen = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.05)
+        self.kidney = nn.CrossEntropyLoss()
+        self.liver = nn.CrossEntropyLoss()
+        self.spleen = nn.CrossEntropyLoss()
         # self.any = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
     
     def forward(self, out, labels):
