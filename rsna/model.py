@@ -138,12 +138,13 @@ class TraumaDetector(nn.Module):
         prob = self.slice_predictor(x)
         for _ in range(b):
             indices = torch.where(prob[_] > 0.5)[0]
-            start, end = 0, c
-            if indices.shape[0] > 0:
-                start, end = indices.min().item(), indices.max().item()
-            print(start, end)
+            # start, end = 0, c
+            # if indices.shape[0] > 0:
+            #     start, end = indices.min().item(), indices.max().item()
+            print(indices)
             x[_] = torch.squeeze(F.interpolate(
-                torch.unsqueeze(torch.unsqueeze(x[_, start:end + 1], dim=0), dim=0),
+                # torch.unsqueeze(torch.unsqueeze(x[_, start:end + 1], dim=0), dim=0),
+                torch.unsqueeze(torch.unsqueeze(x[_, indices], dim=0), dim=0),
                 size=(c, h, w), mode='trilinear'
             ), dim=(0, 1))
 
