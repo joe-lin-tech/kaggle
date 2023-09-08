@@ -2,7 +2,7 @@ import torch
 
 BATCH_SIZE = 8
 N_CHANNELS = 72
-N_WORKERS = 8
+N_WORKERS = 4
 
 SEED = 5
 
