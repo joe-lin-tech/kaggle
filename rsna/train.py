@@ -54,8 +54,8 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
 
         losses += loss.item()
         # writer.add_scalar("Loss/step", loss, i)
-    # scheduler.step()
-    # print(scheduler.get_last_lr())
+    scheduler.step()
+    print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
 
     return losses / len(train_dataloader)
@@ -104,8 +104,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
-    scheduler = None
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
+    # scheduler = None
 
     loss_fn = CombinedLoss()
 
