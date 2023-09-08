@@ -1,11 +1,11 @@
 import torch
 
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 N_CHANNELS = 72
 
 SEED = 5
 
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 EPOCHS = 25
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
