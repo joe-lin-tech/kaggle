@@ -127,7 +127,7 @@ class TraumaDetector(nn.Module):
             nn.GELU(),
             # nn.Dropout(0.4),
             DropBlock3d(p=0.5, block_size=5),
-            nn.Conv3d(128, 64, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
             # nn.Dropout(0.4)
@@ -147,14 +147,13 @@ class TraumaDetector(nn.Module):
         for _ in range(b):
             indices = torch.where(prob[_] > 0.5)[0]
             # start, end = 0, c
-            # if indices.shape[0] > 0:
-            #     start, end = indices.min().item(), indices.max().item()
-            print(indices)
-            x[_] = torch.squeeze(F.interpolate(
-                # torch.unsqueeze(torch.unsqueeze(x[_, start:end + 1], dim=0), dim=0),
-                torch.unsqueeze(torch.unsqueeze(x[_, indices], dim=0), dim=0),
-                size=(c, h, w), mode='trilinear'
-            ), dim=(0, 1))
+            if indices.shape[0] > 0:
+                # start, end = indices.min().item(), indices.max().item()
+                x[_] = torch.squeeze(F.interpolate(
+                    # torch.unsqueeze(torch.unsqueeze(x[_, start:end + 1], dim=0), dim=0),
+                    torch.unsqueeze(torch.unsqueeze(x[_, indices], dim=0), dim=0),
+                    size=(c, h, w), mode='trilinear'
+                ), dim=(0, 1))
 
         x = torch.reshape(x, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
