@@ -87,13 +87,13 @@ for i, (train_idx, val_idx) in enumerate(splits):
     ]), input_type='jpeg')
     # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
-    train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=8)
+    train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=N_WORKERS)
 
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256)),
         torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
     ]), mode='val', input_type='jpeg')
-    val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
+    val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
 
     # print(get_mean_std(train_dataloader, val_dataloader))
 

@@ -69,7 +69,8 @@ class SlicePredictor(nn.Module):
         x = self.encoder(x)
         x = torch.squeeze(self.linear(x), dim=-1)
         x = torch.sigmoid(x)
-        return torch.squeeze(F.interpolate(x.unsqueeze(1), size=c, mode='linear'), dim=1)
+        x = torch.squeeze(F.interpolate(x.unsqueeze(1), size=c, mode='linear'), dim=1)
+        return x
 
 
 class CombinedLoss(nn.Module):
@@ -77,9 +78,9 @@ class CombinedLoss(nn.Module):
         super(CombinedLoss, self).__init__()
         # self.bowel = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([2]).to(DEVICE))
         # self.extravasation = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
-        self.kidney = nn.CrossEntropyLoss()
-        self.liver = nn.CrossEntropyLoss()
-        self.spleen = nn.CrossEntropyLoss()
+        self.kidney = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.05)
+        self.liver = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.05)
+        self.spleen = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.05)
         # self.any = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
     
     def forward(self, out, labels):
@@ -106,10 +107,6 @@ class TraumaDetector(nn.Module):
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        for param in self.backbone[-1].parameters():
-            param.requires_grad = True
 
         self.head = nn.Sequential(
             nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
@@ -144,6 +141,7 @@ class TraumaDetector(nn.Module):
             start, end = 0, c
             if indices.shape[0] > 0:
                 start, end = indices.min().item(), indices.max().item()
+            print(start, end)
             x[_] = torch.squeeze(F.interpolate(
                 torch.unsqueeze(torch.unsqueeze(x[_, start:end + 1], dim=0), dim=0),
                 size=(c, h, w), mode='trilinear'
