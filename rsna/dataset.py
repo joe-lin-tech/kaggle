@@ -64,6 +64,7 @@ class RSNADataset(Dataset):
                 save_masks.append(mask)
             with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'wb') as f:
                 np.save(f, save_masks)
+        return input
     
     def show_mask(self, mask, ax):
         color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
