@@ -11,6 +11,9 @@ import pandas as pd
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
 from grad import plot_gradient
+from argparse import Namespace
+from SAM_Med2D.segment_anything import sam_model_registry
+from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
 from tqdm import tqdm
 from timeit import default_timer as timer
 from params import *
@@ -20,6 +23,9 @@ torch.manual_seed(SEED)
 parser = ArgumentParser(prog='train.py')
 parser.add_argument('-c', '--checkpoint', action='store_true')
 args = parser.parse_args()
+
+model = sam_model_registry["vit_b"](Namespace(image_size=256, encoder_adapter=True, sam_checkpoint=MASK_MODEL)).to(DEVICE)
+mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.4, stability_score_thresh=0.8)
 
 data = pd.read_csv(CSV_FILE)
 
@@ -42,10 +48,10 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
     losses = 0
 
     for i, (inputs, labels) in enumerate(tqdm(train_dataloader)):
-        inputs = inputs.to(DEVICE).float()
+        scans, masked_scans = inputs['scans'].to(DEVICE).float(), inputs['masked_scans'].to(DEVICE).float()
         labels = labels.to(DEVICE)
 
-        out = model(inputs)
+        out = model(scans, masked_scans)
 
         loss = loss_fn(out, labels)
         loss.backward()
@@ -68,10 +74,10 @@ def evaluate(val_dataloader, model):
     losses = 0
 
     for inputs, labels in tqdm(val_dataloader):
-        inputs = inputs.to(DEVICE)
+        scans, masked_scans = inputs['scans'].to(DEVICE).float(), inputs['masked_scans'].to(DEVICE).float()
         labels = labels.to(DEVICE)
 
-        out = model(inputs)
+        out = model(scans, masked_scans)
         loss = loss_fn(out, labels)
         losses += loss.item()
     
@@ -80,7 +86,7 @@ def evaluate(val_dataloader, model):
 
 for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
-    train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
+    train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, mask_generator=mask_generator, transform=torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256), antialias=True),
         torchvision.transforms.Normalize(mean=40.5436, std=64.4406),
         torchvision.transforms.RandomHorizontalFlip(),
@@ -92,7 +98,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=N_WORKERS)
 
-    val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
+    val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, mask_generator=mask_generator, transform=torchvision.transforms.Compose([
         torchvision.transforms.Resize((256, 256), antialias=True),
         torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
     ]), mode='val', input_type='jpeg')

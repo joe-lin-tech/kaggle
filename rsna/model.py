@@ -11,15 +11,9 @@ from argparse import Namespace
 from params import *
 
 
-class MaskPredictor(nn.Module):
+class MaskEncoder(nn.Module):
     def __init__(self):
-        super(MaskPredictor, self).__init__()
-        args = Namespace()
-        args.image_size = 256
-        args.encoder_adapter = True
-        args.sam_checkpoint = MASK_MODEL
-        model = sam_model_registry["vit_b"](args).to(DEVICE)
-        self.mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.4, stability_score_thresh=0.8)
+        super(MaskEncoder, self).__init__()
         
         backbone = resnet18(ResNet18_Weights.DEFAULT)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
@@ -43,22 +37,9 @@ class MaskPredictor(nn.Module):
             nn.Dropout()
         )
 
-    def forward(self, x):
-        for b in range(x.shape[0]):
-            size = 6 # 12
-            for i in range(size // 2, N_CHANNELS - (size // 2), size):
-                image = x[b, i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
-                # plt.imshow(image[:, :, 1], cmap='bone')
-                masks = self.mask_generator.generate(image)
-                mask = torch.tensor(np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0)).to(x.device)
-                x[b, i - (size // 2):i + (size // 2), :, :] *= mask
-                # self.show_mask(mask, plt.gca())
-                # for mask in masks:
-                #     self.show_mask(mask['segmentation'], plt.gca())
-                # plt.axis('off')
-                # plt.show()
-        b, c, h, w = x.shape
-        x = torch.reshape(x, (b * (c // 3), 3, h, w))
+    def forward(self, masked_scans):
+        b, c, h, w = masked_scans.shape
+        x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = F.adaptive_avg_pool2d(x, 1)
         x = torch.flatten(x, 1)
@@ -68,12 +49,6 @@ class MaskPredictor(nn.Module):
         x = F.adaptive_avg_pool1d(x, 1)
         x = torch.flatten(x, 1)
         return x
-
-    def show_mask(self, mask, ax):
-        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
-        h, w = mask.shape[-2:]
-        mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
-        ax.imshow(mask_image)
 
 
 class CombinedLoss(nn.Module):
@@ -105,7 +80,7 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        self.mask_predictor = MaskPredictor()
+        self.mask_encoder = MaskEncoder()
         # self.slice_predictor = SlicePredictor()
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
@@ -148,22 +123,11 @@ class TraumaDetector(nn.Module):
         self.out_spleen = nn.Linear(32, 3)
         # self.out_any = nn.Linear(32, 1)
     
-    def forward(self, x):
-        b, c, h, w = x.shape
-        mask_features = self.mask_predictor(x.clone())
-        # prob = self.slice_predictor(x)
-        # for _ in range(b):
-        #     indices = torch.where(prob[_] > 0.5)[0]
-        #     # start, end = 0, c
-        #     if indices.shape[0] > 0:
-        #         # start, end = indices.min().item(), indices.max().item()
-        #         x[_] = torch.squeeze(F.interpolate(
-        #             # torch.unsqueeze(torch.unsqueeze(x[_, start:end + 1], dim=0), dim=0),
-        #             torch.unsqueeze(torch.unsqueeze(x[_, indices], dim=0), dim=0),
-        #             size=(c, h, w), mode='trilinear'
-        #         ), dim=(0, 1))
+    def forward(self, scans, masked_scans):
+        b, c, h, w = scans.shape
+        mask_features = self.mask_encoder(masked_scans)
 
-        x = torch.reshape(x, (b * (c // 3), 3, h, w))
+        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)

@@ -10,13 +10,14 @@ from typing import Literal
 from params import *
 
 class RSNADataset(Dataset):
-    def __init__(self, split, root_dir, transform = None, mode: Literal['train', 'val'] = 'train',
+    def __init__(self, split, root_dir, mask_generator, transform = None, mode: Literal['train', 'val'] = 'train',
                  input_type: Literal['dicom', 'jpeg'] = 'dicom'):
         self.patient_df = split
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
         self.input_type = input_type
+        self.mask_generator = mask_generator
         # if mode == 'train':
         #     self.weights = self.set_weights(category)
     
@@ -38,37 +39,37 @@ class RSNADataset(Dataset):
         input = images[0] # fix sample selection
         if self.transform:
             input = self.transform(torch.tensor(input).float())
+        
+        masked_input = self.apply_masks(str(idx), input.copy())
+
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
                            0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
-        return input, label
+        return { 'scans': input, 'masked_scans': masked_input }, label
     
-    def set_weights(self, category):
-        fieldnames = [
-            'bowel_healthy', 'bowel_injury',
-            'extravasation_healthy', 'extravasation_injury',
-            'kidney_healthy', 'kidney_low', 'kidney_high',
-            'liver_healthy', 'liver_low', 'liver_high',
-            'spleen_healthy', 'spleen_low', 'spleen_high'
-        ]
-
-        # self.patient_df['set'] = self.patient_df.apply(
-        #     lambda row: sum([(2 ** i) * row[f] for i, f in enumerate(fieldnames)]), axis=1)
-
-        # self.patient_df['set'].hist(bins=np.unique(self.patient_df['set']))
-        # self.patient_df['set'].value_counts().sort_values().plot(kind='bar') 
-        # plt.show(block=True)
-
-        raw_weights = { f: 1 / self.patient_df[f].value_counts()[1] for f in fieldnames }
-        
-        weights = []
-        for i, row in self.patient_df.iterrows():
-            if row[f'{category}_healthy'] == 1:
-                weights.append(raw_weights[f'{category}_healthy'])
-            else:
-                weights.append(raw_weights[f'{category}_injury'])
-        
-        return weights
+    def apply_masks(self, idx, input):
+        size = 6 # 12
+        if idx + '.npy' in os.listdir(os.path.join(MASK_FOLDER, self.mode)):
+            with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'rb') as f:
+                masks = np.load(f)
+            for idx, i in enumerate(range(size // 2, N_CHANNELS, size)):
+                input[i - (size // 2):i + (size // 2), :, :] *= masks[idx]
+        else:
+            save_masks = []
+            for i in range(size // 2, N_CHANNELS, size):
+                image = input[i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
+                masks = self.mask_generator.generate(image.to(DEVICE))
+                mask = np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks.cpu()]), 1, 0)
+                input[i - (size // 2):i + (size // 2), :, :] *= mask
+                save_masks.append(mask)
+            with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'wb') as f:
+                np.save(f, save_masks)
+    
+    def show_mask(self, mask, ax):
+        color = np.concatenate([np.random.random(3), np.array([0.6])], axis=0)
+        h, w = mask.shape[-2:]
+        mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
+        ax.imshow(mask_image)
 
 def get_mean_std(train_dataloader, val_dataloader):
     num_pixels = 0
