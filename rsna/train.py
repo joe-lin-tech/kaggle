@@ -47,9 +47,10 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
     model.train()
     losses = 0
 
-    for i, (inputs, labels) in enumerate(tqdm(train_dataloader)):
-        scans, masked_scans = inputs['scans'].to(DEVICE).float(), inputs['masked_scans'].to(DEVICE).float()
-        labels = labels.to(DEVICE)
+    for i, batch in enumerate(tqdm(train_dataloader)):
+        scans = batch['scans'].to(DEVICE).float()
+        masked_scans = batch['masked_scans'].to(DEVICE).float()
+        labels = batch['labels'].to(DEVICE)
 
         out = model(scans, masked_scans)
 
@@ -73,9 +74,10 @@ def evaluate(val_dataloader, model):
     model.eval()
     losses = 0
 
-    for inputs, labels in tqdm(val_dataloader):
-        scans, masked_scans = inputs['scans'].to(DEVICE).float(), inputs['masked_scans'].to(DEVICE).float()
-        labels = labels.to(DEVICE)
+    for batch in tqdm(val_dataloader):
+        scans = batch['scans'].to(DEVICE).float()
+        masked_scans = batch['masked_scans'].to(DEVICE).float()
+        labels = batch['labels'].to(DEVICE)
 
         out = model(scans, masked_scans)
         loss = loss_fn(out, labels)

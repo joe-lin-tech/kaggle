@@ -45,7 +45,7 @@ class RSNADataset(Dataset):
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
                            0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
-        return { 'scans': input, 'masked_scans': masked_input }, label
+        return { 'scans': input, 'masked_scans': masked_input, 'label': label }
     
     def apply_masks(self, idx, input):
         size = 6 # 12
@@ -53,14 +53,14 @@ class RSNADataset(Dataset):
             with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'rb') as f:
                 masks = np.load(f)
             for idx, i in enumerate(range(size // 2, N_CHANNELS, size)):
-                input[i - (size // 2):i + (size // 2), :, :] *= masks[idx].to(input.device)
+                input[i - (size // 2):i + (size // 2), :, :] *= masks[idx]
         else:
             save_masks = []
             for i in range(size // 2, N_CHANNELS, size):
                 image = input[i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
                 masks = self.mask_generator.generate(image.to(DEVICE))
                 mask = np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0)
-                input[i - (size // 2):i + (size // 2), :, :] *= mask.to(input.device)
+                input[i - (size // 2):i + (size // 2), :, :] *= mask
                 save_masks.append(mask)
             with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'wb') as f:
                 np.save(f, save_masks)
