@@ -37,10 +37,14 @@ class RSNADataset(Dataset):
                     scan.append(np.array(img, dtype=np.float32))
                 images.append(np.stack(scan))
         input = images[0] # fix sample selection
-        if self.transform:
-            input = self.transform(torch.tensor(input).float())
-        
+
+        input = self.transform['preprocess'](torch.tensor(input).float())
         masked_input = self.apply_masks(str(idx), input.clone())
+        
+        if self.mode == 'train':
+            transformed_input = self.transform['random'](torch.concat([input, masked_input], dim=0))
+            input = transformed_input[:N_CHANNELS]
+            masked_input = transformed_input[N_CHANNELS:]
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
