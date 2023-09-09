@@ -2,12 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
-from torchvision.ops import DropBlock2d, DropBlock3d
-from SAM_Med2D.segment_anything import sam_model_registry
-from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
-import numpy as np
-import matplotlib.pyplot as plt
-from argparse import Namespace
+from torchvision.ops import DropBlock3d
 from params import *
 
 

@@ -88,7 +88,7 @@ for f in os.scandir('../../train_images_mini'):
         input = images[0].unsqueeze(0) # fix sample selection
         masked_input = input.clone()
 
-        size = 6 # 12
+        size = MASK_DEPTH # 12
         if f.name + '.npz' in os.listdir(os.path.join(MASK_FOLDER, 'train')):
             masks = np.load(os.path.join(MASK_FOLDER, 'train', f.name + '.npz'))
         else:
