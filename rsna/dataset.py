@@ -51,20 +51,19 @@ class RSNADataset(Dataset):
         size = 6 # 12
         if idx + '.npy' in os.listdir(os.path.join(MASK_FOLDER, self.mode)):
             with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'rb') as f:
-                masks = np.load(f)
-            for idx, i in enumerate(range(size // 2, N_CHANNELS, size)):
-                input[i - (size // 2):i + (size // 2), :, :] *= masks[idx]
+                masks = np.load(f).files
+            for i in range(size // 2, N_CHANNELS, size):
+                input[i - (size // 2):i + (size // 2), :, :] *= masks[i]
         else:
-            save_masks = []
+            save_masks = {}
             for i in range(size // 2, N_CHANNELS, size):
                 image = input[i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
                 masks = self.mask_generator.generate(image.to(DEVICE))
                 mask = np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0)
                 input[i - (size // 2):i + (size // 2), :, :] *= mask
-                save_masks.append(mask)
-            save_masks = np.stack(save_masks)
+                save_masks[i] = mask
             with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'wb') as f:
-                np.save(f, save_masks)
+                np.save(f, **save_masks)
         return input
     
     def show_mask(self, mask, ax):
