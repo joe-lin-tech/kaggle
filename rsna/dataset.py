@@ -62,6 +62,7 @@ class RSNADataset(Dataset):
                 mask = np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0)
                 input[i - (size // 2):i + (size // 2), :, :] *= mask
                 save_masks.append(mask)
+            save_masks = np.stack(save_masks)
             with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'wb') as f:
                 np.save(f, save_masks)
         return input
