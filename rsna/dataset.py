@@ -49,9 +49,8 @@ class RSNADataset(Dataset):
     
     def apply_masks(self, idx, input):
         size = 6 # 12
-        if idx + '.npy' in os.listdir(os.path.join(MASK_FOLDER, self.mode)):
-            with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'rb') as f:
-                masks = np.load(f).files
+        if idx + '.npz' in os.listdir(os.path.join(MASK_FOLDER, self.mode)):
+            masks = np.load(os.path.join(MASK_FOLDER, self.mode, idx + '.npz'))
             for i in range(size // 2, N_CHANNELS, size):
                 input[i - (size // 2):i + (size // 2), :, :] *= masks[str(i)]
         else:
@@ -62,8 +61,7 @@ class RSNADataset(Dataset):
                 mask = np.where(np.logical_or.reduce([mask['segmentation'] for mask in masks]), 1, 0)
                 input[i - (size // 2):i + (size // 2), :, :] *= mask
                 save_masks[str(i)] = mask
-            with open(os.path.join(MASK_FOLDER, self.mode, idx + '.npy'), 'wb') as f:
-                np.save(f, **save_masks)
+            np.savez(os.path.join(MASK_FOLDER, self.mode, idx + '.npz'), **save_masks)
         return input
     
     def show_mask(self, mask, ax):
