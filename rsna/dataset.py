@@ -40,7 +40,7 @@ class RSNADataset(Dataset):
         if self.transform:
             input = self.transform(torch.tensor(input).float())
         
-        masked_input = self.apply_masks(str(idx), input.copy())
+        masked_input = self.apply_masks(str(idx), input.clone())
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
