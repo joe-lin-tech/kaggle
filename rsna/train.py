@@ -3,6 +3,7 @@
 import torch
 import torchvision
 import torch.nn as nn
+from torch.cuda.amp.grad_scaler import GradScaler
 from dataset import RSNADataset, get_mean_std
 from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
@@ -55,14 +56,17 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         out = model(scans, masked_scans)
 
         loss = loss_fn(out, labels)
-        loss.backward()
+        loss = loss / ACCUM_ITER
+
+        scaler.scale(loss).backward()
         # plot_gradient(model.named_parameters())
 
         if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
+            scaler.step(optimizer)
+            scaler.update()
             optimizer.zero_grad()
-            optimizer.step()
 
-        losses += loss.item() / ACCUM_ITER
+        losses += loss.item()
         # writer.add_scalar("Loss/step", loss, i)
     scheduler.step()
     print(scheduler.get_last_lr())
@@ -129,6 +133,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # scheduler = None
 
     loss_fn = CombinedLoss()
+    scaler = GradScaler()
 
     start, end = 1, EPOCHS + 1
     if args.checkpoint:
