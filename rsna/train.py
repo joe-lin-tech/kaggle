@@ -53,10 +53,11 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
-        out = model(scans, masked_scans)
+        with torch.cuda.amp.autocast():
+            out = model(scans, masked_scans)
 
-        loss = loss_fn(out, labels)
-        loss = loss / ACCUM_ITER
+            loss = loss_fn(out, labels)
+            loss = loss / ACCUM_ITER
 
         scaler.scale(loss).backward()
         # plot_gradient(model.named_parameters())
