@@ -62,8 +62,8 @@ class CombinedLoss(nn.Module):
         
         bowel, extravasation = torch.sigmoid(out['bowel']), torch.sigmoid(out['extravasation'])
         kidney, liver, spleen = F.softmax(out['kidney'], dim=-1), F.softmax(out['liver'], dim=-1), F.softmax(out['spleen'], dim=-1)
-        any_injury = torch.hstack([bowel, extravasation, kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]])
-        any_injury, _ = torch.max(1 - any_injury, keepdim=True, dim=-1)
+        healthy = torch.hstack([1 - bowel, 1 - extravasation, kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]])
+        any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
         any_loss = self.any(any_injury, labels[:, 5:6].float())
         # any_loss = self.any(out['any'], labels[:, 5:6].float())
 
@@ -94,7 +94,7 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            DropBlock3d(p=0.2, block_size=3),
+            DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
@@ -105,6 +105,7 @@ class TraumaDetector(nn.Module):
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.GELU(),
+            nn.Dropout(),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU(),
