@@ -65,7 +65,7 @@ class CombinedLoss(nn.Module):
         any_injury = torch.hstack([bowel, extravasation, kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]])
         any_injury, _ = torch.max(1 - any_injury, keepdim=True, dim=-1)
         any_loss = self.any(any_injury, labels[:, 5:6].float())
-        any_loss = self.any(out['any'], labels[:, 5:6].float())
+        # any_loss = self.any(out['any'], labels[:, 5:6].float())
 
         return bce_loss + ce_loss + any_loss
         # return ce_loss
