@@ -21,15 +21,15 @@ class MaskEncoder(nn.Module):
             nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.GELU(),
-            nn.Dropout(),
+            # nn.Dropout(),
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.GELU(),
-            nn.Dropout(),
+            # nn.Dropout(),
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.GELU(),
-            nn.Dropout()
+            # nn.Dropout()
         )
 
     def forward(self, masked_scans):
@@ -90,11 +90,11 @@ class TraumaDetector(nn.Module):
             nn.BatchNorm3d(256),
             nn.GELU(),
             # nn.Dropout(0.4),
-            DropBlock3d(p=0.5, block_size=5),
+            # DropBlock3d(p=0.5, block_size=5),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            DropBlock3d(p=0.5, block_size=3),
+            # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
@@ -105,11 +105,11 @@ class TraumaDetector(nn.Module):
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.GELU(),
-            nn.Dropout(),
+            # nn.Dropout(),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU(),
-            nn.Dropout()
+            # nn.Dropout()
         )
 
         # self.out_bowel = nn.Linear(32, 1)
