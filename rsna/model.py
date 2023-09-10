@@ -21,11 +21,11 @@ class MaskEncoder(nn.Module):
             nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.GELU(),
-            # nn.Dropout(),
+            nn.Dropout(),
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.GELU(),
-            # nn.Dropout(),
+            nn.Dropout(),
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.GELU(),
@@ -49,12 +49,12 @@ class MaskEncoder(nn.Module):
 class CombinedLoss(nn.Module):
     def __init__(self):
         super(CombinedLoss, self).__init__()
-        self.bowel = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([2]).to(DEVICE))
-        self.extravasation = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
-        self.kidney = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.1)
-        self.liver = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.1)
-        self.spleen = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE), label_smoothing=0.1)
-        self.any = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
+        # self.bowel = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([2]).to(DEVICE))
+        # self.extravasation = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
+        self.kidney = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE))
+        self.liver = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE))
+        self.spleen = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE))
+        # self.any = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([6]).to(DEVICE))
     
     def forward(self, out, labels):
         # bce_loss = self.bowel(out['bowel'], labels[:, 0:1].float()) + self.extravasation(out['extravasation'], labels[:, 1:2].float())
@@ -90,11 +90,11 @@ class TraumaDetector(nn.Module):
             nn.BatchNorm3d(256),
             nn.GELU(),
             # nn.Dropout(0.4),
-            # DropBlock3d(p=0.5, block_size=5),
+            DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            # DropBlock3d(p=0.5, block_size=3),
+            DropBlock3d(p=0.2, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
@@ -105,7 +105,7 @@ class TraumaDetector(nn.Module):
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.GELU(),
-            # nn.Dropout(),
+            nn.Dropout(p=0.2),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
             nn.GELU(),
