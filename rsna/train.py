@@ -68,7 +68,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
     print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
 
-    return losses / len(train_dataloader)
+    return losses / len(train_dataloader) * ACCUM_ITER
 
 def evaluate(val_dataloader, model):
     model.eval()
@@ -119,8 +119,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
 
-    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-3)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-3)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)

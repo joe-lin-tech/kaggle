@@ -94,7 +94,7 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.GELU(),
-            nn.Dropout(),
+            DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.GELU(),
@@ -108,7 +108,8 @@ class TraumaDetector(nn.Module):
             nn.Dropout(),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
-            nn.GELU()
+            nn.GELU(),
+            nn.Dropout()
         )
 
         # self.out_bowel = nn.Linear(32, 1)
