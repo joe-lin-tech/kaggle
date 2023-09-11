@@ -7,7 +7,7 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from dataset import RSNADataset, get_mean_std
 from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
-from torch.utils.tensorboard import SummaryWriter
+import wandb
 import pandas as pd
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
@@ -21,6 +21,18 @@ from timeit import default_timer as timer
 from params import *
 
 torch.manual_seed(SEED)
+
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="rsna-abdominal-trauma",
+    
+    # track hyperparameters and run metadata
+    config={
+        "learning_rate": LEARNING_RATE,
+        "epochs": EPOCHS,
+        "seed": SEED
+    }
+)
 
 parser = ArgumentParser(prog='train.py')
 parser.add_argument('-c', '--checkpoint', action='store_true')
@@ -42,8 +54,6 @@ data = pd.read_csv(CSV_FILE)
 
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
-
-writer = SummaryWriter()
 
 def train_epoch(train_dataloader, model, optimizer, scheduler):
     model.train()
@@ -69,7 +79,6 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
             optimizer.zero_grad()
 
         losses += loss.item()
-        # writer.add_scalar("Loss/step", loss, i)
     scheduler.step()
     print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
@@ -124,6 +133,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         checkpoint = torch.load(CHECKPOINT_FILE)
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
+    wandb.watch(model, log='all')
 
     # model_lr = [
     #     { 'params': model.mask_encoder.parameters(), 'lr': MASK_ENCODER_LR },
@@ -143,7 +153,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
     # scheduler = None
 
     loss_fn = CombinedLoss()
@@ -157,7 +167,6 @@ for i, (train_idx, val_idx) in enumerate(splits):
         train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
         val_loss = evaluate(val_dataloader, model)
-        writer.add_scalars("Loss/epoch", { 'train': train_loss, 'val': val_loss }, epoch)
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
         torch.save({
             'split': i,
