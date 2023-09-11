@@ -14,6 +14,8 @@ class MaskEncoder(nn.Module):
         # backbone = resnet18(ResNet18_Weights.DEFAULT)
         self.backbone = vit_b_32(ViT_B_32_Weights.DEFAULT)
         self.backbone.heads = nn.Sequential()
+        for param in self.backbone.parameters():
+            param.requires_grad = False
         for param in self.backbone.encoder.layers.encoder_layer_10.parameters():
             param.requires_grad = True
         for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
