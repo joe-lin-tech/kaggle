@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights, vit_b_16, ViT_B_16_Weights
+from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights, vit_b_32, ViT_B_32_Weights
 from torchvision.ops import DropBlock3d
 from params import *
 
@@ -12,8 +12,9 @@ class MaskEncoder(nn.Module):
         super(MaskEncoder, self).__init__()
         
         # backbone = resnet18(ResNet18_Weights.DEFAULT)
-        backbone = vit_b_16(ViT_B_16_Weights.DEFAULT)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-1]))
+        self.backbone = vit_b_32(ViT_B_32_Weights.DEFAULT)
+        self.backbone.head = nn.Sequential()
+        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
         # for param in self.backbone[-1].parameters():
