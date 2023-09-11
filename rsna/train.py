@@ -78,6 +78,9 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
+        
+        if i % LOG_INTERVAL == 0:
+            wandb.log({ "loss": loss.item() })
 
         losses += loss.item()
     scheduler.step()
@@ -134,7 +137,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         checkpoint = torch.load(CHECKPOINT_FILE)
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
-    wandb.watch(model, log='all', log_freq=100)
+    wandb.watch(model, log='all', log_freq=LOG_INTERVAL)
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
     # model_lr = [
@@ -169,7 +172,6 @@ for i, (train_idx, val_idx) in enumerate(splits):
         train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
         val_loss = evaluate(val_dataloader, model)
-        wandb.log({ "train": train_loss, "val": val_loss })
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
         torch.save({
             'split': i,
