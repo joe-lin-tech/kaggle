@@ -8,6 +8,7 @@ from dataset import RSNADataset, get_mean_std
 from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
 import wandb
+from pytorch_grad_cam import GradCAM
 import pandas as pd
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
@@ -133,7 +134,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
         checkpoint = torch.load(CHECKPOINT_FILE)
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
-    wandb.watch(model, log='all')
+    wandb.watch(model, log='all', log_freq=100)
+    # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
     # model_lr = [
     #     { 'params': model.mask_encoder.parameters(), 'lr': MASK_ENCODER_LR },
