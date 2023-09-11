@@ -13,6 +13,7 @@ from argparse import ArgumentParser
 from sklearn.model_selection import KFold
 from grad import plot_gradient
 from argparse import Namespace
+import itertools
 from SAM_Med2D.segment_anything import sam_model_registry
 from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
 from tqdm import tqdm
@@ -124,7 +125,19 @@ for i, (train_idx, val_idx) in enumerate(splits):
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
+    model_lr = [
+        { 'params': model.mask_encoder.parameters(), 'lr': MASK_ENCODER_LR },
+        { 'params': model.backbone.parameters(), 'lr': BACKBONE_LR },
+        { 'params': model.head.parameters(), 'lr': HEAD_LR },
+        { 'params': itertools.chain(*[
+            model.out.parameters(),
+            model.out_kidney.parameters(),
+            model.out_liver.parameters(),
+            model.out_spleen.parameters()
+        ]), 'lr': OUT_LR }
+    ]
+    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
+    optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-2)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
