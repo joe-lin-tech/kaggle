@@ -7,8 +7,8 @@ N_WORKERS = 0
 
 SEED = 0
 
-LEARNING_RATE = 0.001
-EPOCHS = 25
+LEARNING_RATE = 0.01
+EPOCHS = 40
 MASK_DEPTH = 12 # 6
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
