@@ -5,6 +5,7 @@ import os
 import numpy as np
 from PIL import Image
 # from sklearn.model_selection import train_test_split
+from natsort import natsorted
 from tqdm import tqdm
 from typing import Literal
 from params import *
@@ -30,7 +31,7 @@ class RSNADataset(Dataset):
         for root, dirs, _ in os.walk(path):
             for dirname in dirs:
                 scan = []
-                files = sorted(os.listdir(os.path.join(root, dirname)))
+                files = natsorted(os.listdir(os.path.join(root, dirname)))
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
                     img = Image.open(os.path.join(root, dirname, filename))
