@@ -30,7 +30,7 @@ class RSNADataset(Dataset):
         for root, dirs, _ in os.walk(path):
             for dirname in dirs:
                 scan = []
-                files = os.listdir(os.path.join(root, dirname))
+                files = sorted(os.listdir(os.path.join(root, dirname)))
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
                     img = Image.open(os.path.join(root, dirname, filename))
