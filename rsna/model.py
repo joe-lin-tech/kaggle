@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights
+from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights, vit_b_16, ViT_B_16_Weights
 from torchvision.ops import DropBlock3d
 from params import *
 
@@ -10,16 +10,16 @@ class MaskEncoder(nn.Module):
     def __init__(self):
         super(MaskEncoder, self).__init__()
         
-        backbone = resnet18(ResNet18_Weights.DEFAULT)
-        # backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        for param in self.backbone[-1].parameters():
-            param.requires_grad = True
+        # backbone = resnet18(ResNet18_Weights.DEFAULT)
+        self.backbone = vit_b_16(ViT_B_16_Weights.DEFAULT)
+        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        # for param in self.backbone.parameters():
+        #     param.requires_grad = False
+        # for param in self.backbone[-1].parameters():
+        #     param.requires_grad = True
 
         self.fcn = nn.Sequential(
-            nn.Linear(512, 256),
+            nn.Linear(768, 256),
             nn.BatchNorm1d(256),
             nn.GELU(),
             nn.Dropout(),
@@ -37,9 +37,10 @@ class MaskEncoder(nn.Module):
         b, c, h, w = masked_scans.shape
         x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = torch.flatten(x, 1)
-        x = self.fcn(x)
+        # x = F.adaptive_avg_pool2d(x, 1)
+        # x = torch.flatten(x, 1)
+        # x = self.fcn(x)
+        x = self.fcn(x[:, 0, :])
         x = torch.reshape(x, (b, c // 3, -1))
         x = torch.transpose(x, 1, 2)
         x = F.adaptive_avg_pool1d(x, 1)
@@ -130,8 +131,7 @@ class TraumaDetector(nn.Module):
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
-        x = torch.multiply(x, mask_features)
-        # x = torch.cat([x, mask_features], dim=1)
+        x = torch.cat([x, mask_features], dim=1)
         x = self.out(x)
         out = {
             # 'bowel': self.out_bowel(x),
