@@ -16,8 +16,6 @@ class MaskEncoder(nn.Module):
         self.backbone.heads = nn.Sequential()
         for param in self.backbone.parameters():
             param.requires_grad = False
-        for param in self.backbone.encoder.layers.encoder_layer_10.parameters():
-            param.requires_grad = True
         for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
             param.requires_grad = True
         # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
@@ -29,15 +27,15 @@ class MaskEncoder(nn.Module):
         self.fcn = nn.Sequential(
             nn.Linear(768, 256),
             nn.BatchNorm1d(256),
-            nn.GELU(),
+            nn.ReLU(),
             nn.Dropout(),
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
-            nn.GELU(),
+            nn.ReLU(),
             nn.Dropout(),
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
-            nn.GELU(),
+            nn.ReLU(),
             # nn.Dropout()
         )
 
@@ -97,27 +95,27 @@ class TraumaDetector(nn.Module):
         self.head = nn.Sequential(
             nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
-            nn.GELU(),
+            nn.ReLU(),
             # nn.Dropout(0.4),
-            DropBlock3d(p=0.5, block_size=3),
+            # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
-            nn.GELU(),
-            DropBlock3d(p=0.5, block_size=3),
+            nn.ReLU(),
+            # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
-            nn.GELU(),
+            nn.ReLU(),
             # nn.Dropout(0.4)
         )
 
         self.out = nn.Sequential(
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
-            nn.GELU(),
-            nn.Dropout(),
+            nn.ReLU(),
+            # nn.Dropout(),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
-            nn.GELU(),
+            nn.ReLU(),
             # nn.Dropout()
         )
 
