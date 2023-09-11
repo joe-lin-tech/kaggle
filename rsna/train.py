@@ -125,19 +125,19 @@ for i, (train_idx, val_idx) in enumerate(splits):
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
 
-    model_lr = [
-        { 'params': model.mask_encoder.parameters(), 'lr': MASK_ENCODER_LR },
-        { 'params': model.backbone.parameters(), 'lr': BACKBONE_LR },
-        { 'params': model.head.parameters(), 'lr': HEAD_LR },
-        { 'params': itertools.chain(*[
-            model.out.parameters(),
-            model.out_kidney.parameters(),
-            model.out_liver.parameters(),
-            model.out_spleen.parameters()
-        ]), 'lr': OUT_LR }
-    ]
-    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
-    optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
+    # model_lr = [
+    #     { 'params': model.mask_encoder.parameters(), 'lr': MASK_ENCODER_LR },
+    #     { 'params': model.backbone.parameters(), 'lr': BACKBONE_LR },
+    #     { 'params': model.head.parameters(), 'lr': HEAD_LR },
+    #     { 'params': itertools.chain(*[
+    #         model.out.parameters(),
+    #         model.out_kidney.parameters(),
+    #         model.out_liver.parameters(),
+    #         model.out_spleen.parameters()
+    #     ]), 'lr': OUT_LR }
+    # ]
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
+    # optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
