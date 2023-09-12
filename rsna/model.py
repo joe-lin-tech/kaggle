@@ -82,7 +82,7 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        # self.mask_encoder = MaskEncoder()
+        self.mask_encoder = MaskEncoder()
         # self.slice_predictor = SlicePredictor()
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
@@ -109,9 +109,9 @@ class TraumaDetector(nn.Module):
         )
 
         self.out = nn.Sequential(
-            # nn.Linear(128, 64),
-            # nn.BatchNorm1d(64),
-            # nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
             # nn.Dropout(),
             nn.Linear(64, 32),
             nn.BatchNorm1d(32),
@@ -128,7 +128,7 @@ class TraumaDetector(nn.Module):
     
     def forward(self, scans, masked_scans):
         b, c, h, w = scans.shape
-        # mask_features = self.mask_encoder(masked_scans)
+        mask_features = self.mask_encoder(masked_scans)
 
         x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
@@ -136,7 +136,7 @@ class TraumaDetector(nn.Module):
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
-        # x = torch.cat([x, mask_features], dim=1)
+        x = torch.cat([x, mask_features], dim=1)
         x = self.out(x)
         out = {
             # 'bowel': self.out_bowel(x),

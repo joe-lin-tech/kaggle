@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 # from sklearn.model_selection import train_test_split
 from natsort import natsorted
+import pydicom as dicom
 from tqdm import tqdm
 from typing import Literal
 from params import *
@@ -34,8 +35,30 @@ class RSNADataset(Dataset):
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
-                    img = Image.open(os.path.join(root, dirname, filename))
-                    scan.append(np.array(img, dtype=np.float32))
+                    if self.input_type == 'dicom':
+                        dcm = dicom.dcmread(os.path.join(root, dirname, filename))
+                        pixel_array = dcm.pixel_array
+                        if dcm.PixelRepresentation == 1:
+                            bit_shift = dcm.BitsAllocated - dcm.BitsStored
+                            new_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
+                            pixel_array = dicom.pixel_data_handlers.util.apply_modality_lut(new_array, dcm)
+
+                        if dcm.PhotometricInterpretation == "MONOCHROME1":
+                            pixel_array = 1 - pixel_array
+                            
+                        if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
+                            center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
+                            low = center - width // 2
+                            high = center + width // 2
+                            image = (pixel_array * dcm.RescaleSlope) + dcm.RescaleIntercept
+                            image = np.clip(image, low, high)
+
+                            image = (image - image.min()) / (image.max() - image.min())
+                            image = (image * 255).astype(np.uint8)
+                        scan.append(image)
+                    else:
+                        image = Image.open(os.path.join(root, dirname, filename))
+                        scan.append(np.array(image, dtype=np.float32))
                 images.append(np.stack(scan))
         input = images[0] # fix sample selection
 
