@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import torch.nn.functional as F
+from torchvision.transforms.functional import resize
 from model import TraumaDetector
 import numpy as np
 from PIL import Image
@@ -8,6 +9,7 @@ import pydicom as dicom
 import csv
 import os
 from params import *
+import dicomsdl
 
 model = TraumaDetector()
 model = model.to(DEVICE)
@@ -18,8 +20,7 @@ model.load_state_dict(final['model_state_dict'])
 model.eval()
 
 transform = torchvision.transforms.Compose([
-    torchvision.transforms.ToTensor(),
-    torchvision.transforms.Resize((224, 224))
+    torchvision.transforms.Resize((512, 512), antialias=True),
 ])
 
 fieldnames = [
@@ -71,7 +72,7 @@ def predict(model, batch_id, batch_input, batch_masked_input):
 batch_id = []
 batch_input = []
 batch_masked_input = []
-for f in os.scandir('../../train_images_mini'):
+for f in os.scandir('../../'):
     if f.is_dir():
         path = f.path
         images = []
@@ -81,12 +82,33 @@ for f in os.scandir('../../train_images_mini'):
                 files = os.listdir(os.path.join(root, dirname))
                 channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
-                    img = Image.open(os.path.join(root, dirname, filename))
-                    img = transform(img)
-                    scan.append(img)
-                images.append(torch.concat(scan))
-        input = images[0].unsqueeze(0) # fix sample selection
-        masked_input = input.clone()
+                    dcm = dicomsdl.open(os.path.join(root, dirname, filename))
+                    info = dcm.getPixelDataInfo()
+                    pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
+                    dcm.copyFrameData(0, pixel_array)
+                
+                    if dcm.PixelRepresentation == 1:
+                        bit_shift = dcm.BitsAllocated - dcm.BitsStored
+                        pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
+                        
+                    if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
+                        pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
+                        center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
+                        low = center - 0.5 - (width - 1) // 2
+                        high = center - 0.5 + (width - 1) // 2
+
+                        image = np.empty_like(pixel_array, dtype=np.uint8)
+                        dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
+                    
+                    if dcm.PhotometricInterpretation == "MONOCHROME1":
+                        image = 255 - image
+
+                    scan.append(image)
+                images.append(np.stack(scan))
+        input = images[0] # fix sample selection
+
+        input = transform(torch.tensor(input).float())
+        masked_input = resize(input.clone(), (256, 256))
 
         size = MASK_DEPTH # 12
         if f.name + '.npz' in os.listdir(os.path.join(MASK_FOLDER, 'train')):
