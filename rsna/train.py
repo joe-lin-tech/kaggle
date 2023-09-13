@@ -84,8 +84,8 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         
         if i % LOG_INTERVAL == 0:
             size = MASK_DEPTH
-            raw = [wandb.Image(scans[:, c, :, :]).transpose(1, 2).transpose(2, 3) for c in range(size // 2, N_CHANNELS, size)]
-            masked = [wandb.Image(masked_scans[:, c, :, :]).transpose(1, 2).transpose(2, 3) for c in range(size // 2, N_CHANNELS, size)]
+            raw = [wandb.Image(scans[:, c, :, :].transpose(1, 2).transpose(2, 3)) for c in range(size // 2, N_CHANNELS, size)]
+            masked = [wandb.Image(masked_scans[:, c, :, :].transpose(1, 2).transpose(2, 3)) for c in range(size // 2, N_CHANNELS, size)]
             wandb.log({ "raw": raw, "masked": masked, "loss": loss.item() })
 
         losses += loss.item()
