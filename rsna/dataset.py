@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset
+from torchvision.transforms.functional import resize
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -66,7 +67,7 @@ class RSNADataset(Dataset):
         input = images[0] # fix sample selection
 
         input = self.transform['preprocess'](torch.tensor(input).float())
-        masked_input = self.apply_masks(str(self.patient_df.iloc[idx].patient_id), input.clone())
+        masked_input = self.apply_masks(str(self.patient_df.iloc[idx].patient_id), resize(input.clone(), (256, 256)))
         
         # if self.mode == 'train':
         #     transformed_input = self.transform['random'](torch.concat([input, masked_input], dim=0))
