@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.transforms.functional as TF
+from torchvision.transforms.functional import resize
 from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights, vit_b_32, ViT_B_32_Weights
 from torchvision.ops import DropBlock3d
 from params import *
@@ -42,7 +42,7 @@ class MaskEncoder(nn.Module):
     def forward(self, masked_scans):
         b, c, h, w = masked_scans.shape
         x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
-        x = self.backbone(TF.resize(x, (224, 224)))
+        x = self.backbone(resize(x, (224, 224)))
         # x = F.adaptive_avg_pool2d(x, 1)
         # x = torch.flatten(x, 1)
         x = self.fcn(x)

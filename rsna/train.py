@@ -116,13 +116,13 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
                              transform=dict(
                                  preprocess=torchvision.transforms.Compose([
-                                     torchvision.transforms.Resize((256, 256), antialias=True),
-                                     torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
+                                     torchvision.transforms.Resize((512, 512), antialias=True),
+                                    #  torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
                                  ]),
                                  random=torchvision.transforms.Compose([
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
-                                     torchvision.transforms.RandomResizedCrop((256, 256), antialias=True)
+                                     torchvision.transforms.RandomResizedCrop((512, 512), antialias=True)
                                  ])), mode='train')
     # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
@@ -131,8 +131,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
                            transform=dict(
                                preprocess=torchvision.transforms.Compose([
-                                   torchvision.transforms.Resize((256, 256), antialias=True),
-                                   torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
+                                   torchvision.transforms.Resize((512, 512), antialias=True),
+                                #    torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
                                ])), mode='val')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
 
