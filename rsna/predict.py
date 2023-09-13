@@ -72,7 +72,7 @@ def predict(model, batch_id, batch_input, batch_masked_input):
 batch_id = []
 batch_input = []
 batch_masked_input = []
-for f in os.scandir('../../'):
+for f in os.scandir(ROOT_DIR):
     if f.is_dir():
         path = f.path
         images = []
