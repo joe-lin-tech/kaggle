@@ -36,9 +36,9 @@ with open('submission.csv', 'w') as f:
     writer.writeheader()
 
 def predict(model, batch_id, batch_input, batch_masked_input):
-    batch_input = torch.concat(batch_input)
+    batch_input = torch.stack(batch_input)
     batch_input = batch_input.to(DEVICE)
-    batch_masked_input = torch.concat(batch_masked_input)
+    batch_masked_input = torch.stack(batch_masked_input)
     batch_masked_input = batch_masked_input.to(DEVICE)
 
     out = model(batch_input, batch_masked_input)
