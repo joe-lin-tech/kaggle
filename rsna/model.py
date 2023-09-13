@@ -11,18 +11,20 @@ class MaskEncoder(nn.Module):
     def __init__(self):
         super(MaskEncoder, self).__init__()
         
-        backbone = resnet18(ResNet18_Weights.DEFAULT)
-        # self.backbone = vit_b_32(ViT_B_32_Weights.DEFAULT)
-        # self.backbone.heads = nn.Sequential()
-        # for param in self.backbone.parameters():
-        #     param.requires_grad = False
-        # for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
-        #     param.requires_grad = True
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        # backbone = resnet18(ResNet18_Weights.DEFAULT)
+        self.backbone = vit_b_32(ViT_B_32_Weights.DEFAULT)
+        self.backbone.heads = nn.Sequential()
         for param in self.backbone.parameters():
             param.requires_grad = False
-        for param in self.backbone[-1].parameters():
+        for param in self.backbone.encoder.layers.encoder_layer_10.parameters():
             param.requires_grad = True
+        for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
+            param.requires_grad = True
+        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        # for param in self.backbone.parameters():
+        #     param.requires_grad = False
+        # for param in self.backbone[-1].parameters():
+        #     param.requires_grad = True
 
         self.fcn = nn.Sequential(
             nn.Linear(512, 256),
@@ -42,8 +44,8 @@ class MaskEncoder(nn.Module):
     def forward(self, masked_scans):
         b, c, h, w = masked_scans.shape
         x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
-        # x = self.backbone(resize(x, (224, 224)))
-        x = self.backbone(x)
+        x = self.backbone(resize(x, (224, 224)))
+        # x = self.backbone(x)
         x = F.adaptive_avg_pool2d(x, 1)
         x = torch.flatten(x, 1)
         x = self.fcn(x)
@@ -90,6 +92,8 @@ class TraumaDetector(nn.Module):
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         for param in self.backbone.parameters():
             param.requires_grad = False
+        for param in self.backbone[-2].parameters():
+            param.requires_grad = True
         for param in self.backbone[-1].parameters():
             param.requires_grad = True
 
@@ -97,15 +101,17 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
-            # nn.Dropout(0.4),
+            nn.Dropout3d(),
             # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.ReLU(),
+            nn.Dropout3d(),
             # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.ReLU(),
+            nn.Dropout3d()
             # nn.Dropout(0.4)
         )
 
