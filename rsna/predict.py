@@ -117,7 +117,7 @@ for f in os.scandir(ROOT_DIR):
             masks = np.load(os.path.join(MASK_FOLDER, 'val', f.name + '.npz'))
         
         for i in range(size // 2, N_CHANNELS, size):
-            masked_input[0, i - (size // 2):i + (size // 2), :, :] *= masks[str(i)]
+            masked_input[i - (size // 2):i + (size // 2), :, :] *= masks[str(i)]
 
         batch_id.append(f.name)
         batch_input.append(input)
