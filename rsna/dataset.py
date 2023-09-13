@@ -89,7 +89,7 @@ class RSNADataset(Dataset):
             save_masks = {}
             for i in range(size // 2, N_CHANNELS, size):
                 image = input[i - 1:i + 2, :, :].transpose(0, 1).transpose(1, 2)
-                masks = self.mask_generator.generate(image.to(DEVICE))
+                masks = self.mask_generator.generate(image)
                 mask = np.zeros(image.shape[:-1])
                 for m in masks:
                     mask = np.where(np.logical_and(m['segmentation'], m['stability_score'] > mask), m['stability_score'], mask)

@@ -92,7 +92,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
     print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
 
-    return losses / len(train_dataloader) * ACCUM_ITER
+    return losses / len(train_dataloader)
 
 def evaluate(val_dataloader, model):
     model.eval()
