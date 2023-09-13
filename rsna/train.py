@@ -65,6 +65,10 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
+        raw = wandb.Image(scans[:, N_CHANNELS // 2, :, :])
+        masked = wandb.Image(masked_scans[:, N_CHANNELS // 2, :, :])
+        wandb.log({ "raw": raw, "masked": masked })
+
         with torch.cuda.amp.autocast():
             out = model(scans, masked_scans)
 
