@@ -72,7 +72,6 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
             loss = loss / ACCUM_ITER
 
         scaler.scale(loss).backward()
-        # plot_gradient(model.named_parameters())
 
         if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
             # scaler.unscale_(optimizer)
@@ -100,12 +99,14 @@ def evaluate(val_dataloader, model):
     losses = 0
 
     for batch in tqdm(val_dataloader):
-        scans = batch['scans'].to(DEVICE).float()
-        masked_scans = batch['masked_scans'].to(DEVICE).float()
-        labels = batch['labels'].to(DEVICE)
+        with torch.no_grad():
+            scans = batch['scans'].to(DEVICE).float()
+            masked_scans = batch['masked_scans'].to(DEVICE).float()
+            labels = batch['labels'].to(DEVICE)
 
-        out = model(scans, masked_scans)
-        loss = loss_fn(out, labels)
+            out = model(scans, masked_scans)
+            loss = loss_fn(out, labels)
+        
         losses += loss.item()
     
     return losses / len(val_dataloader)
