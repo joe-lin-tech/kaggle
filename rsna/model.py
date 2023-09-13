@@ -11,21 +11,21 @@ class MaskEncoder(nn.Module):
     def __init__(self):
         super(MaskEncoder, self).__init__()
         
-        # backbone = resnet18(ResNet18_Weights.DEFAULT)
-        self.backbone = vit_b_32(ViT_B_32_Weights.DEFAULT)
-        self.backbone.heads = nn.Sequential()
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
-            param.requires_grad = True
-        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        backbone = resnet18(ResNet18_Weights.DEFAULT)
+        # self.backbone = vit_b_32(ViT_B_32_Weights.DEFAULT)
+        # self.backbone.heads = nn.Sequential()
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
-        # for param in self.backbone[-1].parameters():
+        # for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
         #     param.requires_grad = True
+        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        for param in self.backbone[-1].parameters():
+            param.requires_grad = True
 
         self.fcn = nn.Sequential(
-            nn.Linear(768, 256),
+            nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout(),
@@ -42,9 +42,10 @@ class MaskEncoder(nn.Module):
     def forward(self, masked_scans):
         b, c, h, w = masked_scans.shape
         x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
-        x = self.backbone(resize(x, (224, 224)))
-        # x = F.adaptive_avg_pool2d(x, 1)
-        # x = torch.flatten(x, 1)
+        # x = self.backbone(resize(x, (224, 224)))
+        x = self.backbone(x)
+        x = F.adaptive_avg_pool2d(x, 1)
+        x = torch.flatten(x, 1)
         x = self.fcn(x)
         x = torch.reshape(x, (b, c // 3, -1))
         x = torch.transpose(x, 1, 2)
