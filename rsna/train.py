@@ -65,10 +65,6 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
         masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
-        raw = wandb.Image(scans[:, N_CHANNELS // 2, :, :])
-        masked = wandb.Image(masked_scans[:, N_CHANNELS // 2, :, :])
-        wandb.log({ "raw": raw, "masked": masked })
-
         with torch.cuda.amp.autocast():
             out = model(scans, masked_scans)
 
@@ -87,7 +83,9 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
             optimizer.zero_grad()
         
         if i % LOG_INTERVAL == 0:
-            wandb.log({ "loss": loss.item() })
+            raw = wandb.Image(scans[:, N_CHANNELS // 2, :, :])
+            masked = wandb.Image(masked_scans[:, N_CHANNELS // 2, :, :])
+            wandb.log({ "raw": raw, "masked": masked, "loss": loss.item() })
 
         losses += loss.item()
     scheduler.step()
@@ -124,7 +122,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
                                      torchvision.transforms.RandomResizedCrop((256, 256), antialias=True)
-                                 ])))
+                                 ])), mode='train')
     # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=N_WORKERS)
@@ -134,7 +132,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
                                preprocess=torchvision.transforms.Compose([
                                    torchvision.transforms.Resize((256, 256), antialias=True),
                                    torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
-                               ])))
+                               ])), mode='val')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
 
     # print(get_mean_std(train_dataloader, val_dataloader))

@@ -65,10 +65,10 @@ class RSNADataset(Dataset):
         input = self.transform['preprocess'](torch.tensor(input).float())
         masked_input = self.apply_masks(str(self.patient_df.iloc[idx].patient_id), input.clone())
         
-        if self.mode == 'train':
-            transformed_input = self.transform['random'](torch.concat([input, masked_input], dim=0))
-            input = transformed_input[:N_CHANNELS]
-            masked_input = transformed_input[N_CHANNELS:]
+        # if self.mode == 'train':
+        #     transformed_input = self.transform['random'](torch.concat([input, masked_input], dim=0))
+        #     input = transformed_input[:N_CHANNELS]
+        #     masked_input = transformed_input[N_CHANNELS:]
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), np.argmax(cols[4:7]), np.argmax(cols[7:10]), np.argmax(cols[10:]),
