@@ -67,9 +67,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
 
         with torch.cuda.amp.autocast():
             out = model(scans, masked_scans)
-
             loss = loss_fn(out, labels)
-            loss = loss / ACCUM_ITER
 
         scaler.scale(loss).backward()
 
