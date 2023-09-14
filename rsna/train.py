@@ -171,9 +171,9 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 10, eta_min=1e-3)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-5)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.96)
+    # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.96)
     # scheduler = None
 
     loss_fn = CombinedLoss()
