@@ -29,7 +29,7 @@ wandb.init(
     
     # track hyperparameters and run metadata
     config={
-        "learning_rate": LEARNING_RATE,
+        # "learning_rate": LEARNING_RATE,
         "epochs": EPOCHS,
         "seed": SEED
     }
@@ -161,7 +161,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         ]), 'lr': OUT_LR }
     ]
     # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
-    optimizer = torch.optim.Adam(model_lr, lr=LEARNING_RATE, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model_lr, weight_decay=1e-4)
     # optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
