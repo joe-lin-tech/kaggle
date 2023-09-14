@@ -29,6 +29,11 @@ wandb.init(
     # track hyperparameters and run metadata
     config={
         # "learning_rate": LEARNING_RATE,
+        "mask_backbone_lr": MASK_BACKBONE_LR,
+        "mask_fcn_lr": MASK_FCN_LR,
+        "backbone_lr": BACKBONE_LR,
+        "head_lr": HEAD_LR,
+        "out_lr": OUT_LR,
         "epochs": EPOCHS,
         "seed": SEED
     }
@@ -55,7 +60,7 @@ data = pd.read_csv(CSV_FILE)
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
 
-def train_epoch(train_dataloader, model, optimizer, scheduler):
+def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, scheduler):
     model.train()
     losses = 0
 
@@ -82,7 +87,8 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
             size = MASK_DEPTH
             raw = [wandb.Image(scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
             masked = [wandb.Image(masked_scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
-            # cam = log_grad_cam(model=model, target_layers=model.mask_encoder, input_tensor=scans)
+            # cam = log_grad_cam(model=model, target_layers=model.mask_encoder.backbone.encoder.layers.encoder_layer_10.ln1,
+            #                    input_tensor={ 'scans': scans[0], 'masked_scans': masked_scans[0] })
             wandb.log({ "raw": raw, "masked": masked, "loss": loss.item() })
 
         losses += loss.item()
@@ -92,7 +98,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
 
     return losses / len(train_dataloader)
 
-def evaluate(val_dataloader, model):
+def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
     model.eval()
     losses = 0
 

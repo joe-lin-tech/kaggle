@@ -16,7 +16,9 @@ class OrganInjuryTarget:
 
 def log_grad_cam(model: TraumaDetector, target_layers: List[nn.Module], input_tensor, input_image):
     with GradCAM(model=model, target_layers=target_layers) as cam:
-        batch_results = cam(input_tensor=input_tensor, targets=[ClassifierOutputTarget(3)])
+        repeated_tensor = input_tensor[None, :].repeat(3, 1, 1, 1)
+        batch_results = cam(input_tensor=repeated_tensor, targets=[
+            OrganInjuryTarget('kidney'), OrganInjuryTarget('liver'), OrganInjuryTarget('spleen')])
 
         results = []
         for grayscale_cam in batch_results:
