@@ -152,8 +152,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
         { 'params': model.head.parameters(), 'lr': HEAD_LR },
         { 'params': itertools.chain(*[
             model.out.parameters(),
-            model.out_bowel.parameters(),
-            model.out_extravasation.parameters(),
+            # model.out_bowel.parameters(),
+            # model.out_extravasation.parameters(),
             model.out_kidney.parameters(),
             model.out_liver.parameters(),
             model.out_spleen.parameters()
