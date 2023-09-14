@@ -9,17 +9,18 @@ GRAD_CLIP_NORM = 1.0
 
 SEED = 0
 
-LEARNING_RATE = 0.001
-MASK_ENCODER_LR = 1e-4
+# LEARNING_RATE = 0.001
+MASK_ENCODER_LR = 0.01
 MASK_FCN_LR = 0.001
-BACKBONE_LR = 1e-4
+BACKBONE_LR = 0.01
 HEAD_LR = 0.001
-OUT_LR = 0.01
+OUT_LR = 0.001
 
 EPOCHS = 40
 MASK_DEPTH = 12 # 6
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+MASK_DEVICE = torch.device('cpu')
 CSV_FILE = 'data/train.csv'
 ROOT_DIR = '../../rsna_data/train_images' # '/Volumes/SSD/rsna/train_images_mini_256x256'
 MASK_MODEL = '../../sam-med2d_b.pth' # '/Volumes/SSD/rsna/sam-med2d_b.pth'
