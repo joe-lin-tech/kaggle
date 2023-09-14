@@ -20,7 +20,7 @@ def log_grad_cam(model: TraumaDetector, target_layers: List[nn.Module], input_te
 
         results = []
         for grayscale_cam in batch_results:
-            visualization = show_cam_on_image(np.float32(input_image)/255,
+            visualization = show_cam_on_image(np.float32(input_image) / 255,
                                               grayscale_cam,
                                               use_rgb=True)
             # Make it weight less in the notebook:
