@@ -12,7 +12,6 @@ from grad import log_grad_cam
 import pandas as pd
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
-from grad import plot_gradient
 from argparse import Namespace
 import itertools
 from SAM_Med2D.segment_anything import sam_model_registry
