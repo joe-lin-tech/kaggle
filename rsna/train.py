@@ -8,7 +8,7 @@ from dataset import RSNADataset, get_mean_std
 from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
 import wandb
-from pytorch_grad_cam import GradCAM
+from grad import log_grad_cam
 import pandas as pd
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
@@ -83,6 +83,7 @@ def train_epoch(train_dataloader, model, optimizer, scheduler):
             size = MASK_DEPTH
             raw = [wandb.Image(scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
             masked = [wandb.Image(masked_scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
+            # cam = log_grad_cam(model=model, target_layers=model.mask_encoder, input_tensor=scans)
             wandb.log({ "raw": raw, "masked": masked, "loss": loss.item() })
 
         losses += loss.item()

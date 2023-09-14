@@ -1,19 +1,31 @@
-import matplotlib.pyplot as plt
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+from pytorch_grad_cam.utils.image import show_cam_on_image
+import numpy as np
+import cv2
+import torch.nn as nn
+from model import TraumaDetector
+from typing import List
 
-# from https://github.com/alwynmathew/gradflow-check/blob/master/gradflow_check.py
-
-def plot_gradient(params):
-    layer_grads = []
-    layer_names = []
-    for n, p in params:
-        if p.requires_grad and "bias" not in n:
-            layer_names.append(n[:15])
-            layer_grads.append(p.grad.abs().mean().cpu())
+class OrganInjuryTarget:
+    def __init__(self, organ):
+        self.organ = organ
     
-    plt.plot(layer_grads)
-    plt.xticks(range(0, len(layer_grads), 1), layer_names, rotation="vertical")
-    plt.xlim(xmin=0, xmax=len(layer_grads))
-    plt.xlabel("Layer Names")
-    plt.ylabel("Average Layer Gradient")
-    plt.grid(True)
-    plt.show()
+    def __call__(self, model_output):
+        return model_output[self.organ]
+
+def log_grad_cam(model: TraumaDetector, target_layers: List[nn.Module], input_tensor, input_image):
+    with GradCAM(model=model, target_layers=target_layers) as cam:
+        batch_results = cam(input_tensor=input_tensor, targets=[ClassifierOutputTarget(3)])
+
+        results = []
+        for grayscale_cam in batch_results:
+            visualization = show_cam_on_image(np.float32(input_image)/255,
+                                              grayscale_cam,
+                                              use_rgb=True)
+            # Make it weight less in the notebook:
+            visualization = cv2.resize(visualization,
+                                       (visualization.shape[1] // 2, visualization.shape[0] // 2))
+            results.append(visualization)
+        
+        return np.hstack(results)
