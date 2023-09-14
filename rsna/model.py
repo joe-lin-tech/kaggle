@@ -18,13 +18,13 @@ class MaskEncoder(nn.Module):
         #     param.requires_grad = False
         # for param in self.backbone.conv_proj.parameters():
         #     param.requires_grad = True
-        for layer in self.backbone.encoder.layers:
-            for param in layer.self_attention.parameters():
-                param.requires_grad = True
-        # for param in self.backbone.encoder.layers.encoder_layer_10.parameters():
-        #     param.requires_grad = True
-        # for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
-        #     param.requires_grad = True
+        # for layer in self.backbone.encoder.layers:
+        #     for param in layer.self_attention.parameters():
+        #         param.requires_grad = True
+        for param in self.backbone.encoder.layers.encoder_layer_10.parameters():
+            param.requires_grad = True
+        for param in self.backbone.encoder.layers.encoder_layer_11.parameters():
+            param.requires_grad = True
         # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         # for param in self.backbone.parameters():
         #     param.requires_grad = False
