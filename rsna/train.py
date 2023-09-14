@@ -40,7 +40,7 @@ parser.add_argument('-c', '--checkpoint', action='store_true')
 args = parser.parse_args()
 
 model = sam_model_registry["vit_b"](Namespace(image_size=256, encoder_adapter=True, sam_checkpoint=MASK_MODEL)).to(DEVICE)
-mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.75, stability_score_thresh=0.8)
+mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.5, stability_score_thresh=0.8)
 
 data = pd.read_csv(CSV_FILE)
 
