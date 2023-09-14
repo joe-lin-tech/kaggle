@@ -147,8 +147,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
 
     model_lr = [
         { 'params': itertools.chain(*[
-            model.mask_encoder.backbone.encoder.layers.encoder_layer_10.parameters(),
-            model.mask_encoder.backbone.encoder.layers.encoder_layer_11.parameters()
+            layer.attention.parameters() for layer in model.mask_encoder.backbone.encoder.layers
         ]), 'lr': MASK_ENCODER_LR },
         { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
         { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
