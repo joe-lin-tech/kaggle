@@ -145,19 +145,23 @@ for i, (train_idx, val_idx) in enumerate(splits):
     wandb.watch(model, log='all', log_freq=LOG_INTERVAL)
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
-    # model_lr = [
-    #     { 'params': model.mask_encoder.parameters(), 'lr': MASK_ENCODER_LR },
-    #     { 'params': model.backbone.parameters(), 'lr': BACKBONE_LR },
-    #     { 'params': model.head.parameters(), 'lr': HEAD_LR },
-    #     { 'params': itertools.chain(*[
-    #         model.out.parameters(),
-    #         model.out_kidney.parameters(),
-    #         model.out_liver.parameters(),
-    #         model.out_spleen.parameters()
-    #     ]), 'lr': OUT_LR }
-    # ]
+    model_lr = [
+        { 'params': itertools.chain(*[
+            model.mask_encoder.backbone.encoder.layers.encoder_layer_10.parameters(),
+            model.mask_encoder.backbone.encoder.layers.encoder_layer_11.parameters()
+        ]), 'lr': MASK_ENCODER_LR },
+        { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
+        { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
+        { 'params': model.head.parameters(), 'lr': HEAD_LR },
+        { 'params': itertools.chain(*[
+            model.out.parameters(),
+            model.out_kidney.parameters(),
+            model.out_liver.parameters(),
+            model.out_spleen.parameters()
+        ]), 'lr': OUT_LR }
+    ]
     # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model_lr, lr=LEARNING_RATE, weight_decay=1e-4)
     # optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:

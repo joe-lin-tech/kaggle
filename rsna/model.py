@@ -92,8 +92,6 @@ class TraumaDetector(nn.Module):
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         for param in self.backbone.parameters():
             param.requires_grad = False
-        for param in self.backbone[-2].parameters():
-            param.requires_grad = True
         for param in self.backbone[-1].parameters():
             param.requires_grad = True
 
@@ -126,8 +124,8 @@ class TraumaDetector(nn.Module):
             # nn.Dropout()
         )
 
-        self.out_bowel = nn.Linear(32, 1)
-        self.out_extravasation = nn.Linear(32, 1)
+        # self.out_bowel = nn.Linear(32, 1)
+        # self.out_extravasation = nn.Linear(32, 1)
         self.out_kidney = nn.Linear(32, 3)
         self.out_liver = nn.Linear(32, 3)
         self.out_spleen = nn.Linear(32, 3)
@@ -145,8 +143,8 @@ class TraumaDetector(nn.Module):
         x = torch.cat([x, mask_features], dim=1)
         x = self.out(x)
         out = {
-            'bowel': self.out_bowel(x),
-            'extravasation': self.out_extravasation(x),
+            # 'bowel': self.out_bowel(x),
+            # 'extravasation': self.out_extravasation(x),
             'kidney': self.out_kidney(x),
             'liver': self.out_liver(x),
             'spleen': self.out_spleen(x)
