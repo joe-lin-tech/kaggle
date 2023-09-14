@@ -142,21 +142,18 @@ for i, (train_idx, val_idx) in enumerate(splits):
         checkpoint = torch.load(CHECKPOINT_FILE)
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
-    wandb.watch(model, log='all', log_freq=LOG_INTERVAL)
+    wandb.watch(model, log_freq=LOG_INTERVAL)
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
     model_lr = [
-        { 'params': itertools.chain(*[
-            model.mask_encoder.backbone.encoder.layers.encoder_layer_10.parameters(),
-            model.mask_encoder.backbone.encoder.layers.encoder_layer_11.parameters()
-        ]), 'lr': MASK_BACKBONE_LR },
+        { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
         { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
         { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
         { 'params': model.head.parameters(), 'lr': HEAD_LR },
         { 'params': itertools.chain(*[
             model.out.parameters(),
-            # model.out_bowel.parameters(),
-            # model.out_extravasation.parameters(),
+            model.out_bowel.parameters(),
+            model.out_extravasation.parameters(),
             model.out_kidney.parameters(),
             model.out_liver.parameters(),
             model.out_spleen.parameters()
