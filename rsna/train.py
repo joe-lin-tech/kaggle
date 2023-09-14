@@ -146,7 +146,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
     model_lr = [
-        { 'params': model.mask_encoder.backbone, 'lr': MASK_BACKBONE_LR },
+        { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
         { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
         { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
         { 'params': model.head.parameters(), 'lr': HEAD_LR },
