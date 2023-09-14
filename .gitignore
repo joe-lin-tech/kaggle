@@ -7,3 +7,4 @@ kaggle.pem
 *.csv
 SAM_Med2D
 masks
+wandb
