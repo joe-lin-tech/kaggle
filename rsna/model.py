@@ -59,6 +59,39 @@ class MaskEncoder(nn.Module):
         x = F.adaptive_avg_pool1d(x, 1)
         x = torch.flatten(x, 1)
         return x
+    
+
+class SlicePredictor(nn.Module):
+    def __init__(self):
+        super(SlicePredictor, self).__init__()
+        backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
+        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        for param in self.backbone[-1].parameters():
+            param.requires_grad = True
+
+        self.layer_norm = nn.LayerNorm(512)
+        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
+
+        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+
+        self.linear = nn.Linear(512, 1)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        x = x.view(b * (c // 3), 3, h, w)
+        x = self.backbone(x)
+        x = F.adaptive_avg_pool2d(x, 1)
+        x = torch.flatten(x, 1)
+        x = torch.reshape(x, (b, (c // 3), 512))
+        x = self.layer_norm(x) + self.pos_embedding
+        x = self.encoder(x)
+        x = torch.squeeze(self.linear(x), dim=-1)
+        x = torch.sigmoid(x)
+        x = torch.squeeze(F.interpolate(x.unsqueeze(1), size=c, mode='linear'), dim=1)
+        return x
 
 
 class CombinedLoss(nn.Module):
@@ -90,7 +123,7 @@ class TraumaDetector(nn.Module):
         super(TraumaDetector, self).__init__()
 
         # self.mask_encoder = MaskEncoder()
-        # self.slice_predictor = SlicePredictor()
+        self.slice_predictor = SlicePredictor()
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
@@ -137,6 +170,14 @@ class TraumaDetector(nn.Module):
     def forward(self, scans, masked_scans):
         b, c, h, w = scans.shape
         # mask_features = self.mask_encoder(masked_scans)
+        prob = self.slice_predictor(scans)
+        for _ in range(b):
+            indices = torch.where(prob[_] > 0.5)[0]
+            if indices.shape[0] > 0:
+                scans[_] = torch.squeeze(F.interpolate(
+                    torch.unsqueeze(torch.unsqueeze(scans[_, indices], dim=0), dim=0),
+                    size=(c, h, w), mode='trilinear'
+                ), dim=(0, 1))
 
         x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
