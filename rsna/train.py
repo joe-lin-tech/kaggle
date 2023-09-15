@@ -62,7 +62,7 @@ data = pd.read_csv(CSV_FILE)
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
 
-def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, scheduler):
+def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, scheduler, epoch):
     model.train()
     losses = 0
 
@@ -84,8 +84,9 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
+            scheduler.step(epoch + i / len(train_dataloader))
         
-        if (i + 1) % LOG_INTERVAL == 0:
+        if ((i + 1) % LOG_INTERVAL == 0) or (i + 1 == len(train_dataloader)):
             # size = MASK_DEPTH
             # raw = [wandb.Image(scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
             # masked = [wandb.Image(masked_scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
@@ -95,7 +96,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
             wandb.log({ "loss": loss.item() })
 
         losses += loss.item()
-    scheduler.step()
+    # scheduler.step()
     print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
 
@@ -188,7 +189,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         start, end = checkpoint['epoch'] + 1, checkpoint['epoch'] + EPOCHS + 1
     for epoch in range(start, end):
         start_time = timer()
-        train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
+        train_loss = train_epoch(train_dataloader, model, optimizer, scheduler, epoch)
         end_time = timer()
         val_loss = evaluate(val_dataloader, model)
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
