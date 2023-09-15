@@ -32,14 +32,18 @@ class MaskEncoder(nn.Module):
         #     param.requires_grad = True
 
         self.fcn = nn.Sequential(
-            nn.Linear(768, 256),
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout1d(),
+            nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Dropout(),
+            nn.Dropout1d(),
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Dropout(),
+            nn.Dropout1d(),
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.ReLU(),
