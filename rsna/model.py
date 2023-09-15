@@ -7,17 +7,6 @@ from torchvision.ops import DropBlock3d
 from params import *
 
 
-class BatchNormReshape(nn.Module):
-    def __init__(self, num_features):
-        super(BatchNormReshape, self).__init__()
-        self.batch_norm = nn.BatchNorm1d(num_features)
-
-    def forward(self, x):
-        x = torch.transpose(x, 1, 2)
-        x = self.batch_norm(x)
-        x = torch.transpose(x, 1, 2)
-        return x
-
 class MaskEncoder(nn.Module):
     def __init__(self):
         super(MaskEncoder, self).__init__()
@@ -44,18 +33,15 @@ class MaskEncoder(nn.Module):
 
         self.fcn = nn.Sequential(
             nn.Linear(768, 256),
-            # nn.BatchNorm1d(32),
-            BatchNormReshape(256),
+            nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout1d(),
             nn.Linear(256, 128),
-            # nn.BatchNorm1d(32),
-            BatchNormReshape(128),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout1d(),
             nn.Linear(128, 64),
-            # nn.BatchNorm1d(32),
-            BatchNormReshape(64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             # nn.Dropout()
         )
@@ -67,9 +53,8 @@ class MaskEncoder(nn.Module):
         # x = self.backbone(x)
         # x = F.adaptive_avg_pool2d(x, 1)
         # x = torch.flatten(x, 1)
-        x = torch.reshape(x, (b, c // 3, -1))
         x = self.fcn(x)
-        # x = torch.reshape(x, (b, c // 3, -1))
+        x = torch.reshape(x, (b, c // 3, -1))
         x = torch.transpose(x, 1, 2)
         x = F.adaptive_avg_pool1d(x, 1)
         x = torch.flatten(x, 1)
