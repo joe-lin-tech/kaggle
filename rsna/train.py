@@ -29,13 +29,13 @@ wandb.init(
     # track hyperparameters and run metadata
     config={
         # "learning_rate": LEARNING_RATE,
-        "mask_backbone_lr": MASK_BACKBONE_LR,
-        "mask_fcn_lr": MASK_FCN_LR,
-        "backbone_lr": BACKBONE_LR,
+        # "mask_backbone_lr": MASK_BACKBONE_LR,
+        # "mask_fcn_lr": MASK_FCN_LR,
+        # "backbone_lr": BACKBONE_LR,
         "head_lr": HEAD_LR,
         "out_lr": OUT_LR,
         "min_lr": MIN_LR,
-        "mask_depth": MASK_DEPTH,
+        # "mask_depth": MASK_DEPTH,
         "epochs": EPOCHS,
         "seed": SEED
     }
@@ -155,10 +155,10 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
     model_lr = [
-        { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
-        { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
-        # { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
-        # { 'params': model.head.parameters(), 'lr': HEAD_LR },
+        # { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
+        # { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
+        { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
+        { 'params': model.head.parameters(), 'lr': HEAD_LR },
         { 'params': itertools.chain(*[
             model.out.parameters(),
             model.out_bowel.parameters(),

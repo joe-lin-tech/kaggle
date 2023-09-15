@@ -89,33 +89,33 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        self.mask_encoder = MaskEncoder()
+        # self.mask_encoder = MaskEncoder()
         # self.slice_predictor = SlicePredictor()
 
-        # backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
-        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        # for param in self.backbone.parameters():
-        #     param.requires_grad = False
-        # for param in self.backbone[-1].parameters():
-        #     param.requires_grad = True
+        backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        for param in self.backbone[-1].parameters():
+            param.requires_grad = True
 
-        # self.head = nn.Sequential(
-        #     nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-        #     nn.BatchNorm3d(256),
-        #     nn.ReLU(),
-        #     # nn.Dropout3d(),
-        #     # DropBlock3d(p=0.5, block_size=3),
-        #     nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-        #     nn.BatchNorm3d(128),
-        #     nn.ReLU(),
-        #     # nn.Dropout3d(),
-        #     # DropBlock3d(p=0.5, block_size=3),
-        #     nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-        #     nn.BatchNorm3d(64),
-        #     nn.ReLU(),
-        #     # nn.Dropout3d()
-        #     # nn.Dropout(0.4)
-        # )
+        self.head = nn.Sequential(
+            nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.BatchNorm3d(256),
+            nn.ReLU(),
+            # nn.Dropout3d(),
+            # DropBlock3d(p=0.5, block_size=3),
+            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.BatchNorm3d(128),
+            nn.ReLU(),
+            # nn.Dropout3d(),
+            # DropBlock3d(p=0.5, block_size=3),
+            nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.BatchNorm3d(64),
+            nn.ReLU(),
+            # nn.Dropout3d()
+            # nn.Dropout(0.4)
+        )
 
         self.out = nn.Sequential(
             # nn.Linear(128, 64),
@@ -136,17 +136,17 @@ class TraumaDetector(nn.Module):
     
     def forward(self, scans, masked_scans):
         b, c, h, w = scans.shape
-        mask_features = self.mask_encoder(masked_scans)
+        # mask_features = self.mask_encoder(masked_scans)
 
-        # x = torch.reshape(scans, (b * (c // 3), 3, h, w))
-        # x = self.backbone(x)
-        # x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
-        # x = self.head(x)
-        # x = F.adaptive_avg_pool3d(x, 1)
-        # x = torch.flatten(x, 1)
+        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
+        x = self.backbone(x)
+        x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
+        x = self.head(x)
+        x = F.adaptive_avg_pool3d(x, 1)
+        x = torch.flatten(x, 1)
         # x = torch.cat([x, mask_features], dim=1)
-        # x = self.out(x)
-        x = self.out(mask_features)
+        x = self.out(x)
+        # x = self.out(mask_features)
         out = {
             'bowel': self.out_bowel(x),
             'extravasation': self.out_extravasation(x),
