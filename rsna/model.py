@@ -53,7 +53,7 @@ class MaskEncoder(nn.Module):
         # x = self.backbone(x)
         # x = F.adaptive_avg_pool2d(x, 1)
         # x = torch.flatten(x, 1)
-        x = self.fcn(x)
+        x = self.fcn(x[:, 0, :])
         x = torch.reshape(x, (b, c // 3, -1))
         x = torch.transpose(x, 1, 2)
         x = F.adaptive_avg_pool1d(x, 1)
