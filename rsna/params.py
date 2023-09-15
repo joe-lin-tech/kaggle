@@ -3,7 +3,7 @@ import torch
 BATCH_SIZE = 4
 ACCUM_ITER = 32
 N_CHANNELS = 96
-N_WORKERS = 2
+N_WORKERS = 4
 LOG_INTERVAL = 32
 GRAD_CLIP_NORM = 1.0
 
@@ -17,7 +17,7 @@ HEAD_LR = 0.01
 OUT_LR = 0.01
 
 EPOCHS = 40
-MASK_DEPTH = 12 # 6
+MASK_DEPTH = 6
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 MASK_DEVICE = torch.device('cpu')
