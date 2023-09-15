@@ -36,13 +36,13 @@ class MaskEncoder(nn.Module):
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout1d(),
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Dropout1d(),
-            nn.Linear(128, 64),
+            nn.Linear(256, 64),
             nn.BatchNorm1d(64),
             nn.ReLU(),
+            nn.Dropout1d(),
+            # nn.Linear(128, 64),
+            # nn.BatchNorm1d(64),
+            # nn.ReLU(),
             # nn.Dropout()
         )
 
@@ -121,18 +121,18 @@ class TraumaDetector(nn.Module):
             nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.ReLU(),
-            nn.Dropout(),
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),
-            nn.ReLU(),
+            # nn.Dropout(),
+            # nn.Linear(64, 32),
+            # nn.BatchNorm1d(32),
+            # nn.ReLU(),
             # nn.Dropout()
         )
 
-        self.out_bowel = nn.Linear(32, 1)
-        self.out_extravasation = nn.Linear(32, 1)
-        self.out_kidney = nn.Linear(32, 3)
-        self.out_liver = nn.Linear(32, 3)
-        self.out_spleen = nn.Linear(32, 3)
+        self.out_bowel = nn.Linear(64, 1)
+        self.out_extravasation = nn.Linear(64, 1)
+        self.out_kidney = nn.Linear(64, 3)
+        self.out_liver = nn.Linear(64, 3)
+        self.out_spleen = nn.Linear(64, 3)
     
     def forward(self, scans, masked_scans):
         b, c, h, w = scans.shape
