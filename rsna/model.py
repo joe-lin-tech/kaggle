@@ -37,7 +37,7 @@ class MaskEncoder(nn.Module):
             nn.ReLU(),
             nn.Dropout1d(),
             nn.Linear(256, 128),
-            nn.BatchNorm1d(64),
+            nn.BatchNorm1d(128),
             nn.ReLU(),
             nn.Dropout1d(),
             nn.Linear(128, 64),
