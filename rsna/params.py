@@ -17,7 +17,7 @@ HEAD_LR = 0.01
 OUT_LR = 0.01
 
 EPOCHS = 40
-MASK_DEPTH = 6
+MASK_DEPTH = 12
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 MASK_DEVICE = torch.device('cpu')

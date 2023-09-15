@@ -34,6 +34,7 @@ wandb.init(
         "backbone_lr": BACKBONE_LR,
         "head_lr": HEAD_LR,
         "out_lr": OUT_LR,
+        "mask_depth": MASK_DEPTH,
         "epochs": EPOCHS,
         "seed": SEED
     }
