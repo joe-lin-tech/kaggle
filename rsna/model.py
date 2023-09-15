@@ -13,9 +13,9 @@ class BatchNormReshape(nn.Module):
         self.batch_norm = nn.BatchNorm1d(num_features)
 
     def forward(self, x):
-        x = torch.transpose(1, 2)
+        x = torch.transpose(x, 1, 2)
         x = self.batch_norm(x)
-        x = torch.transpose(1, 2)
+        x = torch.transpose(x, 1, 2)
         return x
 
 class MaskEncoder(nn.Module):
