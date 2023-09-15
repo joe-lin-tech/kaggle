@@ -84,7 +84,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
-            scheduler.step(epoch + i / len(train_dataloader))
+            # scheduler.step(epoch + i / len(train_dataloader))
         
         if ((i + 1) % LOG_INTERVAL == 0) or (i + 1 == len(train_dataloader)):
             # size = MASK_DEPTH
@@ -96,7 +96,8 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
             wandb.log({ "loss": loss.item() })
 
         losses += loss.item()
-    # scheduler.step()
+    scheduler.step()
+    wandb.log({ "current_lr": scheduler.get_last_lr() })
     print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
 
@@ -176,9 +177,9 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=MIN_LR)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=MIN_LR)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.96)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.6)
     # scheduler = None
 
     loss_fn = CombinedLoss()
