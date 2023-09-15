@@ -7,6 +7,16 @@ from torchvision.ops import DropBlock3d
 from params import *
 
 
+class BatchNormReshape(nn.Module):
+    def __init__(self, num_features):
+        self.batch_norm = nn.BatchNorm1d(num_features)
+
+    def forward(self, x):
+        x = torch.transpose(1, 2)
+        x = self.batch_norm(x)
+        x = torch.transpose(1, 2)
+        return x
+
 class MaskEncoder(nn.Module):
     def __init__(self):
         super(MaskEncoder, self).__init__()
@@ -33,15 +43,18 @@ class MaskEncoder(nn.Module):
 
         self.fcn = nn.Sequential(
             nn.Linear(768, 256),
-            nn.BatchNorm1d(32),
+            # nn.BatchNorm1d(32),
+            BatchNormReshape(256),
             nn.ReLU(),
             nn.Dropout1d(),
             nn.Linear(256, 128),
-            nn.BatchNorm1d(32),
+            # nn.BatchNorm1d(32),
+            BatchNormReshape(128),
             nn.ReLU(),
             nn.Dropout1d(),
             nn.Linear(128, 64),
-            nn.BatchNorm1d(32),
+            # nn.BatchNorm1d(32),
+            BatchNormReshape(64),
             nn.ReLU(),
             # nn.Dropout()
         )
