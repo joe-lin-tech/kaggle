@@ -34,6 +34,7 @@ wandb.init(
         "backbone_lr": BACKBONE_LR,
         "head_lr": HEAD_LR,
         "out_lr": OUT_LR,
+        "min_lr": MIN_LR,
         "mask_depth": MASK_DEPTH,
         "epochs": EPOCHS,
         "seed": SEED
@@ -173,7 +174,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=MIN_LR)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
     # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.96)
     # scheduler = None
