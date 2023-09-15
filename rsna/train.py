@@ -28,12 +28,12 @@ wandb.init(
     
     # track hyperparameters and run metadata
     config={
-        # "learning_rate": LEARNING_RATE,
+        "learning_rate": LEARNING_RATE,
         # "mask_backbone_lr": MASK_BACKBONE_LR,
         # "mask_fcn_lr": MASK_FCN_LR,
         # "backbone_lr": BACKBONE_LR,
-        "head_lr": HEAD_LR,
-        "out_lr": OUT_LR,
+        # "head_lr": HEAD_LR,
+        # "out_lr": OUT_LR,
         "min_lr": MIN_LR,
         # "mask_depth": MASK_DEPTH,
         "epochs": EPOCHS,
@@ -154,22 +154,23 @@ for i, (train_idx, val_idx) in enumerate(splits):
     wandb.watch(model, log_freq=LOG_INTERVAL)
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
 
-    model_lr = [
-        # { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
-        # { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
-        { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
-        { 'params': model.head.parameters(), 'lr': HEAD_LR },
-        { 'params': itertools.chain(*[
-            model.out.parameters(),
-            model.out_bowel.parameters(),
-            model.out_extravasation.parameters(),
-            model.out_kidney.parameters(),
-            model.out_liver.parameters(),
-            model.out_spleen.parameters()
-        ]), 'lr': OUT_LR }
-    ]
+    # model_lr = [
+    #     # { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
+    #     # { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
+    #     { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
+    #     { 'params': model.head.parameters(), 'lr': HEAD_LR },
+    #     { 'params': itertools.chain(*[
+    #         model.out.parameters(),
+    #         model.out_bowel.parameters(),
+    #         model.out_extravasation.parameters(),
+    #         model.out_kidney.parameters(),
+    #         model.out_liver.parameters(),
+    #         model.out_spleen.parameters()
+    #     ]), 'lr': OUT_LR }
+    # ]
     # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
-    optimizer = torch.optim.Adam(model_lr, weight_decay=1e-4)
+    # optimizer = torch.optim.Adam(model_lr, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
     # optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     if args.checkpoint:
