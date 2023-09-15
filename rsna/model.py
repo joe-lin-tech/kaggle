@@ -167,7 +167,7 @@ class TraumaDetector(nn.Module):
         self.out_liver = nn.Linear(64, 3)
         self.out_spleen = nn.Linear(64, 3)
     
-    def forward(self, scans, masked_scans):
+    def forward(self, scans):
         b, c, h, w = scans.shape
         # mask_features = self.mask_encoder(masked_scans)
         prob = self.slice_predictor(scans)

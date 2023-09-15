@@ -62,17 +62,18 @@ data = pd.read_csv(CSV_FILE)
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
 
-def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, scheduler, epoch):
+def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, scheduler):
     model.train()
     losses = 0
 
     for i, batch in enumerate(tqdm(train_dataloader)):
         scans = batch['scans'].to(DEVICE).float()
-        masked_scans = batch['masked_scans'].to(DEVICE).float()
+        # masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
         with torch.cuda.amp.autocast():
-            out = model(scans, masked_scans)
+            # out = model(scans, masked_scans)
+            out = model(scans)
             loss = loss_fn(out, labels)
 
         scaler.scale(loss).backward()
@@ -97,7 +98,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
 
         losses += loss.item()
     scheduler.step()
-    wandb.log({ "current_lr": scheduler.get_last_lr() })
+    wandb.log({ "current_lr": scheduler.get_last_lr()[0] })
     print(scheduler.get_last_lr())
     # scheduler.step(losses / len(train_iter))
 
@@ -110,10 +111,11 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
     for batch in tqdm(val_dataloader):
         with torch.no_grad():
             scans = batch['scans'].to(DEVICE).float()
-            masked_scans = batch['masked_scans'].to(DEVICE).float()
+            # masked_scans = batch['masked_scans'].to(DEVICE).float()
             labels = batch['labels'].to(DEVICE)
 
-            out = model(scans, masked_scans)
+            # out = model(scans, masked_scans)
+            out = model(scans)
             loss = loss_fn(out, labels)
         
         losses += loss.item()
@@ -179,7 +181,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=MIN_LR)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.6)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
     # scheduler = None
 
     loss_fn = CombinedLoss()
@@ -190,7 +192,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
         start, end = checkpoint['epoch'] + 1, checkpoint['epoch'] + EPOCHS + 1
     for epoch in range(start, end):
         start_time = timer()
-        train_loss = train_epoch(train_dataloader, model, optimizer, scheduler, epoch)
+        train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
         val_loss = evaluate(val_dataloader, model)
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
