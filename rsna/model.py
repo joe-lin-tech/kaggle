@@ -93,7 +93,11 @@ class CombinedLoss(nn.Module):
     def forward(self, out, labels):
         ce_loss = self.kidney(out['kidney'], labels[:, 2:5].float()) + self.liver(out['liver'], labels[:, 5:8].float()) + self.spleen(out['spleen'], labels[:, 8:11].float())
 
-        return ce_loss
+        kidney, liver, spleen = F.softmax(out['kidney'], dim=-1), F.softmax(out['liver'], dim=-1), F.softmax(out['spleen'], dim=-1)
+        healthy = torch.hstack([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]])
+        any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
+        any_loss = -6 * labels[:, 5:6].float() * torch.log(any_injury) - (1 - labels[:, 5:6]).float() * torch.log(1 - any_injury)
+        return ce_loss + any_loss
     
 
 class TraumaDetector(nn.Module):

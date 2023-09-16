@@ -72,7 +72,8 @@ class RSNADataset(Dataset):
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), cols[4:7], cols[7:10], cols[10:],
-                           0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
+                           0 if cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
+                        #    0 if cols[0] == 1 and cols[2] == 1 and cols[4] == 1 and cols[7] == 1 and cols[10] == 1 else 1])
         # return { 'scans': input, 'masked_scans': masked_input, 'labels': label }
         return { 'scans': input, 'labels': label }
     
