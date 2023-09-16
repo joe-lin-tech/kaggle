@@ -12,6 +12,7 @@ from grad import log_grad_cam
 import pandas as pd
 from argparse import ArgumentParser
 from sklearn.model_selection import KFold
+from preprocess import resample
 from argparse import Namespace
 import itertools
 from SAM_Med2D.segment_anything import sam_model_registry
@@ -49,15 +50,6 @@ model = sam_model_registry["vit_b"](Namespace(image_size=256, encoder_adapter=Tr
 mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.5, stability_score_thresh=0.8)
 
 data = pd.read_csv(CSV_FILE)
-
-# bowel_healthy = data['bowel_healthy'].mean(axis=0)
-# bowel_injury = data['bowel_injury'].mean(axis=0) * 2
-# bowel = bowel_healthy + bowel_injury
-# print(bowel_healthy / bowel, bowel_injury / bowel)
-# extravasation_healthy = data['extravasation_healthy'].mean(axis=0)
-# extravasation_injury = data['extravasation_injury'].mean(axis=0) * 6
-# extravasation = extravasation_healthy + extravasation_injury
-# print(extravasation_healthy / extravasation, extravasation_injury / extravasation)
 
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
 splits = sss.split(data)
@@ -125,6 +117,7 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
 
 for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
+    train_data = resample(train_data)
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
                              transform=dict(
                                  preprocess=torchvision.transforms.Compose([

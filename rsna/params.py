@@ -17,6 +17,12 @@ LEARNING_RATE = 0.001
 # OUT_LR = 0.01
 MIN_LR = 1e-5
 
+OVERSAMPLING_WEIGHTS = {
+    'kidney': 4,
+    'liver': 2,
+    'spleen': 2
+}
+
 EPOCHS = 40
 MASK_DEPTH = 12
 
