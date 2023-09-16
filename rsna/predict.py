@@ -35,13 +35,14 @@ with open('submission.csv', 'w') as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
 
-def predict(model, batch_id, batch_input, batch_masked_input):
+def predict(model, batch_id, batch_input):
     batch_input = torch.stack(batch_input)
     batch_input = batch_input.to(DEVICE)
-    batch_masked_input = torch.stack(batch_masked_input)
-    batch_masked_input = batch_masked_input.to(DEVICE)
+    # batch_masked_input = torch.stack(batch_masked_input)
+    # batch_masked_input = batch_masked_input.to(DEVICE)
 
-    out = model(batch_input, batch_masked_input)
+    # out = model(batch_input, batch_masked_input)
+    out = model(batch_input)
     # bowel = torch.sigmoid(out['bowel'])
     # extravasation = torch.sigmoid(out['extravasation'])
     kidney = F.softmax(out['kidney'], dim=-1)
@@ -108,28 +109,30 @@ for f in os.scandir(ROOT_DIR):
         input = images[0] # fix sample selection
 
         input = transform(torch.tensor(input).float())
-        masked_input = resize(input.clone(), (256, 256))
+        # masked_input = resize(input.clone(), (256, 256))
 
-        size = MASK_DEPTH # 12
-        if f.name + '.npz' in os.listdir(os.path.join(MASK_FOLDER, 'train')):
-            masks = np.load(os.path.join(MASK_FOLDER, 'train', f.name + '.npz'))
-        else:
-            masks = np.load(os.path.join(MASK_FOLDER, 'val', f.name + '.npz'))
+        # size = MASK_DEPTH # 12
+        # if f.name + '.npz' in os.listdir(os.path.join(MASK_FOLDER, 'train')):
+        #     masks = np.load(os.path.join(MASK_FOLDER, 'train', f.name + '.npz'))
+        # else:
+        #     masks = np.load(os.path.join(MASK_FOLDER, 'val', f.name + '.npz'))
         
-        for i in range(size // 2, N_CHANNELS, size):
-            masked_input[i - (size // 2):i + (size // 2), :, :] *= masks[str(i)]
+        # for i in range(size // 2, N_CHANNELS, size):
+        #     masked_input[i - (size // 2):i + (size // 2), :, :] *= masks[str(i)]
 
         batch_id.append(f.name)
         batch_input.append(input)
-        batch_masked_input.append(masked_input)
+        # batch_masked_input.append(masked_input)
         if len(batch_id) == BATCH_SIZE:
-            predict(model, batch_id, batch_input, batch_masked_input)
+            # predict(model, batch_id, batch_input, batch_masked_input)
+            predict(model, batch_id, batch_input)
             batch_id.clear()
             batch_input.clear()
-            batch_masked_input.clear()
+            # batch_masked_input.clear()
 
 if len(batch_id) > 0:
-    predict(model, batch_id, batch_input, batch_masked_input)
+    # predict(model, batch_id, batch_input, batch_masked_input)
+    predict(model, batch_id, batch_input)
     batch_id.clear()
     batch_input.clear()
-    batch_masked_input.clear()
+    # batch_masked_input.clear()
