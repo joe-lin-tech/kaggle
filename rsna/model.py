@@ -28,6 +28,7 @@ class MaskEncoder(nn.Module):
             param.requires_grad = True
 
         self.layer_norm = nn.LayerNorm(512)
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
         self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
@@ -43,8 +44,9 @@ class MaskEncoder(nn.Module):
         x = torch.flatten(x, 1)
         x = torch.reshape(x, (b, (c // 3), 512))
         x = self.layer_norm(x) + self.pos_embedding
+        x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)
-        x = self.linear(x)
+        x = self.linear(x[:, 0, :])
         return x
 
 
