@@ -114,17 +114,17 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
-            nn.Dropout3d(),
+            # nn.Dropout3d(),
             # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.ReLU(),
-            nn.Dropout3d(),
+            # nn.Dropout3d(),
             # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.ReLU(),
-            nn.Dropout3d()
+            # nn.Dropout3d()
             # nn.Dropout(0.4)
         )
 
@@ -149,15 +149,17 @@ class TraumaDetector(nn.Module):
         b, c, h, w = scans.shape
         # mask_features = self.mask_encoder(masked_scans)
         prob = self.slice_predictor(scans)
+        sliced_scans = scans.clone()
+
         for _ in range(b):
             indices = torch.where(prob[_] > 0.5)[0]
             if indices.shape[0] > 0:
-                scans[_] = torch.squeeze(F.interpolate(
+                sliced_scans[_] = torch.squeeze(F.interpolate(
                     torch.unsqueeze(torch.unsqueeze(scans[_, indices], dim=0), dim=0),
                     size=(c, h, w), mode='trilinear'
                 ), dim=(0, 1))
 
-        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
+        x = torch.reshape(sliced_scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)
