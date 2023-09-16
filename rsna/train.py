@@ -73,7 +73,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
 
         if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
             # scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
 
             # scaler.step(optimizer)
             # scaler.update()
@@ -119,7 +119,7 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
 
 for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
-    train_data = resample(train_data)
+    # train_data = resample(train_data)
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
                              transform=dict(
                                  preprocess=torchvision.transforms.Compose([
