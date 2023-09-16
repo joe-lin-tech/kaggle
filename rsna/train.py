@@ -60,12 +60,12 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
 
     for i, batch in enumerate(tqdm(train_dataloader)):
         scans = batch['scans'].to(DEVICE).float()
-        # masked_scans = batch['masked_scans'].to(DEVICE).float()
+        masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
         with torch.cuda.amp.autocast():
-            # out = model(scans, masked_scans)
-            out = model(scans)
+            out = model(scans, masked_scans)
+            # out = model(scans)
             loss = loss_fn(out, labels)
 
         scaler.scale(loss).backward()
@@ -103,11 +103,11 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
     for batch in tqdm(val_dataloader):
         with torch.no_grad():
             scans = batch['scans'].to(DEVICE).float()
-            # masked_scans = batch['masked_scans'].to(DEVICE).float()
+            masked_scans = batch['masked_scans'].to(DEVICE).float()
             labels = batch['labels'].to(DEVICE)
 
-            # out = model(scans, masked_scans)
-            out = model(scans)
+            out = model(scans, masked_scans)
+            # out = model(scans)
             loss = loss_fn(out, labels)
         
         losses += loss.item()
