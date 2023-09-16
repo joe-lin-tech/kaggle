@@ -175,7 +175,7 @@ class TraumaDetector(nn.Module):
             indices = torch.where(prob[_] > 0.5)[0]
             if indices.shape[0] > 0:
                 scans[_] = torch.squeeze(F.interpolate(
-                    torch.unsqueeze(torch.unsqueeze(torch.index_select(scans[_], indices), dim=0), dim=0),
+                    torch.unsqueeze(torch.unsqueeze(torch.index_select(scans[_], 0, indices), dim=0), dim=0),
                     size=(c, h, w), mode='trilinear'
                 ), dim=(0, 1))
 
