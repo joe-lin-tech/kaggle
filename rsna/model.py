@@ -47,13 +47,11 @@ class MaskEncoder(nn.Module):
         x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
         x = self.backbone(resize(x, (224, 224)))
         # x = self.backbone(x)
-        # x = F.adaptive_avg_pool2d(x, 1)
         # x = torch.flatten(x, 1)
-        x = self.fcn(x)
         x = torch.reshape(x, (b, c // 3, -1))
         x = torch.transpose(x, 1, 2)
-        x = F.adaptive_avg_pool1d(x, 1)
-        x = torch.flatten(x, 1)
+        x = F.adaptive_avg_pool2d(x, 1)
+        x = self.fcn(x)
         return x
 
 
