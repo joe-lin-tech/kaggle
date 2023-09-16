@@ -133,33 +133,33 @@ class TraumaDetector(nn.Module):
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.Conv3d(2048, 512, kernel_size=(7, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.BatchNorm3d(512),
+            nn.ReLU(),
+            nn.Dropout3d(),
+            # DropBlock3d(p=0.5, block_size=3),
+            nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
-            # nn.Dropout3d(),
+            nn.Dropout3d(),
             # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(128),
             nn.ReLU(),
-            # nn.Dropout3d(),
-            # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(64),
-            nn.ReLU(),
-            # nn.Dropout3d()
+            nn.Dropout3d()
             # nn.Dropout(0.4)
         )
 
-        # self.out = nn.Sequential(
-        #     # nn.Linear(128, 64),
-        #     # nn.BatchNorm1d(64),
-        #     # nn.ReLU(),
-        #     # nn.Dropout(),
-        #     nn.Linear(64, 32),
-        #     nn.BatchNorm1d(32),
-        #     nn.ReLU(),
-        #     # nn.Dropout()
-        # )
+        self.out = nn.Sequential(
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            # nn.Dropout(),
+            # nn.Linear(64, 32),
+            # nn.BatchNorm1d(32),
+            # nn.ReLU(),
+            # nn.Dropout()
+        )
 
         # self.out_bowel = nn.Linear(32, 1)
         # self.out_extravasation = nn.Linear(32, 1)
@@ -175,7 +175,7 @@ class TraumaDetector(nn.Module):
             indices = torch.where(prob[_] > 0.5)[0]
             if indices.shape[0] > 0:
                 scans[_] = torch.squeeze(F.interpolate(
-                    torch.unsqueeze(torch.unsqueeze(scans[_, indices], dim=0), dim=0),
+                    torch.unsqueeze(torch.unsqueeze(torch.index_select(scans, 1, indices), dim=0), dim=0),
                     size=(c, h, w), mode='trilinear'
                 ), dim=(0, 1))
 
@@ -186,7 +186,7 @@ class TraumaDetector(nn.Module):
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
         # x = torch.cat([x, mask_features], dim=1)
-        # x = self.out(x)
+        x = self.out(x)
         # x = self.out(mask_features)
         out = {
             # 'bowel': self.out_bowel(x),
