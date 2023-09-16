@@ -174,10 +174,11 @@ class TraumaDetector(nn.Module):
         for _ in range(b):
             indices = torch.where(prob[_] > 0.5)[0]
             if indices.shape[0] > 0:
-                scans[_] = torch.squeeze(F.interpolate(
+                interpolated_scans = torch.squeeze(F.interpolate(
                     torch.unsqueeze(torch.unsqueeze(torch.index_select(scans[_], 0, indices), dim=0), dim=0),
                     size=(c, h, w), mode='trilinear'
                 ), dim=(0, 1))
+                scans[_] = interpolated_scans
 
         x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
