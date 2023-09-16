@@ -126,7 +126,7 @@ class TraumaDetector(nn.Module):
         b, c, h, w = scans.shape
         mask_features = self.mask_encoder(masked_scans)
 
-        x = torch.reshape(torch.cat(x, dim=0), (b * (c // 3), 3, h, w))
+        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)
