@@ -111,26 +111,26 @@ class TraumaDetector(nn.Module):
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(2048, 512, kernel_size=(7, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-            nn.BatchNorm3d(512),
-            nn.ReLU(),
-            nn.Dropout3d(),
-            # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.Conv3d(2048, 256, kernel_size=(7, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
             nn.Dropout3d(),
             # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
+            nn.ReLU(),
+            nn.Dropout3d(),
+            # DropBlock3d(p=0.5, block_size=3),
+            nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+            nn.BatchNorm3d(64),
             nn.ReLU(),
             nn.Dropout3d()
             # nn.Dropout(0.4)
         )
 
         self.out = nn.Sequential(
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
             # nn.Dropout(),
             # nn.Linear(64, 32),
@@ -141,9 +141,9 @@ class TraumaDetector(nn.Module):
 
         # self.out_bowel = nn.Linear(32, 1)
         # self.out_extravasation = nn.Linear(32, 1)
-        self.out_kidney = nn.Linear(64, 3)
-        self.out_liver = nn.Linear(64, 3)
-        self.out_spleen = nn.Linear(64, 3)
+        self.out_kidney = nn.Linear(32, 3)
+        self.out_liver = nn.Linear(32, 3)
+        self.out_spleen = nn.Linear(32, 3)
     
     def forward(self, scans):
         b, c, h, w = scans.shape
