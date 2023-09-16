@@ -128,22 +128,22 @@ class TraumaDetector(nn.Module):
             # nn.Dropout(0.4)
         )
 
-        self.out = nn.Sequential(
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),
-            nn.ReLU(),
+        # self.out = nn.Sequential(
+            # nn.Linear(64, 32),
+            # nn.BatchNorm1d(32),
+            # nn.ReLU(),
             # nn.Dropout(),
             # nn.Linear(64, 32),
             # nn.BatchNorm1d(32),
             # nn.ReLU(),
             # nn.Dropout()
-        )
+        # )
 
         # self.out_bowel = nn.Linear(32, 1)
         # self.out_extravasation = nn.Linear(32, 1)
-        self.out_kidney = nn.Linear(32, 3)
-        self.out_liver = nn.Linear(32, 3)
-        self.out_spleen = nn.Linear(32, 3)
+        self.out_kidney = nn.Linear(64, 3)
+        self.out_liver = nn.Linear(64, 3)
+        self.out_spleen = nn.Linear(64, 3)
     
     def forward(self, scans):
         b, c, h, w = scans.shape
@@ -164,7 +164,7 @@ class TraumaDetector(nn.Module):
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
         # x = torch.cat([x, mask_features], dim=1)
-        x = self.out(x)
+        # x = self.out(x)
         # x = self.out(mask_features)
         out = {
             # 'bowel': self.out_bowel(x),
