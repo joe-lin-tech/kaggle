@@ -111,7 +111,7 @@ class TraumaDetector(nn.Module):
             param.requires_grad = True
 
         self.head = nn.Sequential(
-            nn.Conv3d(2048, 256, kernel_size=(7, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
             nn.Dropout3d(),
