@@ -171,6 +171,7 @@ class TraumaDetector(nn.Module):
         b, c, h, w = scans.shape
         # mask_features = self.mask_encoder(masked_scans)
         prob = self.slice_predictor(scans)
+        x = []
         for _ in range(b):
             indices = torch.where(prob[_] > 0.5)[0]
             if indices.shape[0] > 0:
@@ -178,9 +179,9 @@ class TraumaDetector(nn.Module):
                     torch.unsqueeze(torch.unsqueeze(torch.index_select(scans[_], 0, indices), dim=0), dim=0),
                     size=(c, h, w), mode='trilinear'
                 ), dim=(0, 1))
-                scans[_] = interpolated_scans
+                x.append(interpolated_scans)
 
-        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
+        x = torch.reshape(torch.stack(x, dim=0), (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)
