@@ -149,7 +149,7 @@ class TraumaDetector(nn.Module):
         b, c, h, w = scans.shape
         # mask_features = self.mask_encoder(masked_scans)
         prob = self.slice_predictor(scans)
-        sliced_scans = torch.multiply(scans, prob)
+        sliced_scans = torch.multiply(scans, torch.reshape(prob, (prob.shape[0], prob.shape[1], 1, 1)))
 
         x = torch.reshape(sliced_scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
