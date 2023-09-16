@@ -100,7 +100,8 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        self.mask_encoder = MaskEncoder()
+        # self.mask_encoder = MaskEncoder()
+        self.slice_predictor = SlicePredictor()
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
