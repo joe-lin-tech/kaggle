@@ -129,7 +129,7 @@ class TraumaDetector(nn.Module):
         )
 
         self.out = nn.Sequential(
-            nn.Linear(256, 64),
+            nn.Linear(128, 64),
             nn.BatchNorm1d(64),
             nn.ReLU(),
             # nn.Dropout(),
