@@ -179,11 +179,11 @@ class TraumaDetector(nn.Module):
                     torch.unsqueeze(torch.unsqueeze(torch.index_select(scans[_], 0, indices), dim=0), dim=0),
                     size=(c, h, w), mode='trilinear'
                 ), dim=(0, 1))
-                x.append(interpolated_scans)
+                x.append(torch.unsqueeze(interpolated_scans, dim=0))
             else:
-                x.append(scans[_])
+                x.append(torch.unsqueeze(scans[_], dim=0))
 
-        x = torch.reshape(torch.cat(torch.unsqueeze(x, dim=0), dim=0), (b * (c // 3), 3, h, w))
+        x = torch.reshape(torch.cat(x, dim=0), (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)
