@@ -66,8 +66,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
         with torch.cuda.amp.autocast():
         # out = model(scans, masked_scans)
             out = model(scans)
-        
-        loss = loss_fn(out, labels)
+            loss = loss_fn(out, labels)
 
         scaler.scale(loss).backward()
         # loss.backward()
