@@ -14,8 +14,5 @@ for i in tqdm(range(len(data))):
             # os.makedirs(f"masks/total_seg/{str(data.iloc[i].patient_id)}")
             input = os.path.join(root, dirname)
             output = f"masks/total_seg/{str(data.iloc[i].patient_id)}/{dirname}.nii.gz"
-            subset = "spleen kidney_left kidney_right liver esophagus colon duodenum small_bowel stomach"
+            subset = "spleen kidney_left kidney_right liver small_bowel"
             subprocess.call(f"TotalSegmentator -i {input} -o {output} -ot 'nifti' -rs {subset} -ml --fast", shell=True)
-            # totalsegmentator(os.path.join(root, dirname), 'masks/total_seg',
-            #                  output_type='nifti', roi_subset='spleen kidney_left kidney_right liver esophagus colon duodenum small_bowel stomach',
-            #                  fast=True, ml=True, preview=True)
