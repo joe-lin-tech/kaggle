@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 import wandb
 from grad import log_grad_cam
 import pandas as pd
-from argparse import ArgumentParser
 from sklearn.model_selection import KFold
 from preprocess import resample
 from argparse import Namespace
@@ -42,10 +41,6 @@ wandb.init(
     }
 )
 
-parser = ArgumentParser(prog='train.py')
-parser.add_argument('-c', '--checkpoint', action='store_true')
-args = parser.parse_args()
-
 model = sam_model_registry["vit_b"](Namespace(image_size=256, encoder_adapter=True, sam_checkpoint=MASK_MODEL)).to(MASK_DEVICE)
 mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.5, stability_score_thresh=0.8)
 
@@ -60,12 +55,12 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
 
     for i, batch in enumerate(tqdm(train_dataloader)):
         scans = batch['scans'].to(DEVICE).float()
-        # masked_scans = batch['masked_scans'].to(DEVICE).float()
+        masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
         with torch.cuda.amp.autocast():
-        # out = model(scans, masked_scans)
-            out = model(scans)
+            out = model(scans, masked_scans)
+            # out = model(scans)
             loss = loss_fn(out, labels)
 
         scaler.scale(loss).backward()
@@ -105,11 +100,11 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
     for batch in tqdm(val_dataloader):
         with torch.no_grad():
             scans = batch['scans'].to(DEVICE).float()
-            # masked_scans = batch['masked_scans'].to(DEVICE).float()
+            masked_scans = batch['masked_scans'].to(DEVICE).float()
             labels = batch['labels'].to(DEVICE)
 
-            # out = model(scans, masked_scans)
-            out = model(scans)
+            out = model(scans, masked_scans)
+            # out = model(scans)
             loss = loss_fn(out, labels)
         
         losses += loss.item()
@@ -147,7 +142,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # print(get_mean_std(train_dataloader, val_dataloader))
 
     model = TraumaDetector()
-    if args.checkpoint:
+    if FROM_CHECKPOINT:
         checkpoint = torch.load(CHECKPOINT_FILE)
         model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
@@ -173,7 +168,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
     # optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
     # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
-    if args.checkpoint:
+    if FROM_CHECKPOINT:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=MIN_LR)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
@@ -184,7 +179,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     scaler = GradScaler()
 
     start, end = 1, EPOCHS + 1
-    if args.checkpoint:
+    if FROM_CHECKPOINT:
         start, end = checkpoint['epoch'] + 1, checkpoint['epoch'] + EPOCHS + 1
     for epoch in range(start, end):
         start_time = timer()

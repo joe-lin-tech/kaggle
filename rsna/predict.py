@@ -43,11 +43,12 @@ def predict(model, batch_id, batch_input):
 
     # out = model(batch_input, batch_masked_input)
     out = model(batch_input)
+    kidney, liver, spleen = out
     # bowel = torch.sigmoid(out['bowel'])
     # extravasation = torch.sigmoid(out['extravasation'])
-    kidney = F.softmax(out['kidney'], dim=-1)
-    liver = F.softmax(out['liver'], dim=-1)
-    spleen = F.softmax(out['spleen'], dim=-1)
+    kidney = F.softmax(kidney, dim=-1)
+    liver = F.softmax(liver, dim=-1)
+    spleen = F.softmax(spleen, dim=-1)
 
     with open('submission.csv', 'a') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

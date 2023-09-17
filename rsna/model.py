@@ -134,16 +134,16 @@ class TraumaDetector(nn.Module):
             # nn.Dropout(0.4)
         )
 
-        # self.out = nn.Sequential(
-            # nn.Linear(64, 32),
-            # nn.BatchNorm1d(32),
-            # nn.ReLU(),
+        self.out = nn.Sequential(
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
             # nn.Dropout(),
             # nn.Linear(64, 32),
             # nn.BatchNorm1d(32),
             # nn.ReLU(),
             # nn.Dropout()
-        # )
+        )
 
         # self.out_bowel = nn.Linear(32, 1)
         # self.out_extravasation = nn.Linear(32, 1)
@@ -151,20 +151,20 @@ class TraumaDetector(nn.Module):
         self.out_liver = nn.Linear(64, 3)
         self.out_spleen = nn.Linear(64, 3)
     
-    def forward(self, scans):
+    def forward(self, scans, masked_scans):
         b, c, h, w = scans.shape
-        # mask_features = self.mask_encoder(masked_scans)
-        prob = self.slice_predictor(scans)
-        sliced_scans = torch.multiply(scans, torch.reshape(prob, (prob.shape[0], prob.shape[1], 1, 1)))
+        mask_features = self.mask_encoder(masked_scans)
+        # prob = self.slice_predictor(scans)
+        # sliced_scans = torch.multiply(scans, torch.reshape(prob, (prob.shape[0], prob.shape[1], 1, 1)))
 
-        x = torch.reshape(sliced_scans, (b * (c // 3), 3, h, w))
+        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
         x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
-        # x = torch.cat([x, mask_features], dim=1)
-        # x = self.out(x)
+        x = torch.cat([x, mask_features], dim=1)
+        x = self.out(x)
         # x = self.out(mask_features)
         kidney = self.out_kidney(x)
         liver = self.out_liver(x)
