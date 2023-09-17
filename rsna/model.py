@@ -91,9 +91,10 @@ class CombinedLoss(nn.Module):
         self.spleen = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 4.0]).to(DEVICE))
     
     def forward(self, out, labels):
-        ce_loss = self.kidney(out['kidney'], labels[:, 2:5].float()) + self.liver(out['liver'], labels[:, 5:8].float()) + self.spleen(out['spleen'], labels[:, 8:11].float())
+        kidney, liver, spleen = out
+        ce_loss = self.kidney(kidney, labels[:, 2:5].float()) + self.liver(liver, labels[:, 5:8].float()) + self.spleen(spleen, labels[:, 8:11].float())
 
-        kidney, liver, spleen = F.softmax(out['kidney'], dim=-1), F.softmax(out['liver'], dim=-1), F.softmax(out['spleen'], dim=-1)
+        kidney, liver, spleen = F.softmax(kidney, dim=-1), F.softmax(liver, dim=-1), F.softmax(spleen, dim=-1)
         healthy = torch.cat([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]], dim=-1)
         any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
         any_loss = torch.mean(-6 * labels[:, 5:6].float() * torch.log(any_injury) - (1 - labels[:, 5:6]).float() * torch.log(1 - any_injury))
@@ -164,11 +165,7 @@ class TraumaDetector(nn.Module):
         # x = torch.cat([x, mask_features], dim=1)
         # x = self.out(x)
         # x = self.out(mask_features)
-        out = {
-            # 'bowel': self.out_bowel(x),
-            # 'extravasation': self.out_extravasation(x),
-            'kidney': self.out_kidney(x),
-            'liver': self.out_liver(x),
-            'spleen': self.out_spleen(x)
-        }
-        return out
+        kidney = self.out_kidney(x)
+        liver = self.out_liver(x)
+        spleen = self.out_spleen(x)
+        return kidney, liver, spleen
