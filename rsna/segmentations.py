@@ -10,4 +10,6 @@ for i in tqdm(range(len(data))):
     images = []
     for root, dirs, _ in os.walk(path):
         for dirname in dirs:
-            totalsegmentator(os.path.join(root, dirname), 'masks/total_seg', output_type='nifti', roi_subset='spleen kidney_left kidney_right liver esophagus colon duodenum small_bowel stomach')
+            totalsegmentator(os.path.join(root, dirname), 'masks/total_seg',
+                             output_type='nifti', roi_subset='spleen kidney_left kidney_right liver esophagus colon duodenum small_bowel stomach',
+                             fast=True, ml=True, preview=True)
