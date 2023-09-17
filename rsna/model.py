@@ -34,7 +34,7 @@ class MaskEncoder(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
-        self.linear = nn.Linear(512, 128)
+        self.linear = nn.Linear(512, 64)
 
     def forward(self, masked_scans):
         b, c, h, w = masked_scans.shape
