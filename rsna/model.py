@@ -97,7 +97,7 @@ class CombinedLoss(nn.Module):
         kidney, liver, spleen = F.softmax(kidney, dim=-1), F.softmax(liver, dim=-1), F.softmax(spleen, dim=-1)
         healthy = torch.cat([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]], dim=-1)
         any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
-        any_loss = torch.mean(-6 * labels[:, 5:6].float() * torch.log(any_injury) - (1 - labels[:, 5:6]).float() * torch.log(1 - any_injury))
+        any_loss = torch.mean(-6 * labels[:, 11:12].float() * torch.log(any_injury) - (1 - labels[:, 11:12]).float() * torch.log(1 - any_injury))
         return ce_loss + any_loss
     
 
