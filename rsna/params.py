@@ -6,6 +6,7 @@ N_CHANNELS = 96
 N_WORKERS = 8
 LOG_INTERVAL = 32
 GRAD_CLIP_NORM = 1.0
+RESAMPLE = True
 
 SEED = 0
 
@@ -25,6 +26,7 @@ OVERSAMPLING_WEIGHTS = {
 
 EPOCHS = 40
 MASK_DEPTH = 12
+SCAN_SIZE = 256
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 MASK_DEVICE = torch.device('cpu')

@@ -119,17 +119,18 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
 
 for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
-    # train_data = resample(train_data)
+    if RESAMPLE:
+        train_data = resample(train_data)
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
                              transform=dict(
                                  preprocess=torchvision.transforms.Compose([
-                                     torchvision.transforms.Resize((512, 512), antialias=True),
+                                     torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True),
                                     #  torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
                                  ]),
                                  random=torchvision.transforms.Compose([
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
-                                     torchvision.transforms.RandomResizedCrop((512, 512), antialias=True)
+                                     torchvision.transforms.RandomResizedCrop((SCAN_SIZE, SCAN_SIZE), antialias=True)
                                  ])), mode='train')
     # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
     # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
@@ -138,7 +139,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
                            transform=dict(
                                preprocess=torchvision.transforms.Compose([
-                                   torchvision.transforms.Resize((512, 512), antialias=True),
+                                   torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True),
                                 #    torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
                                ])), mode='val')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
