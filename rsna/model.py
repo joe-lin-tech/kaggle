@@ -35,6 +35,7 @@ class MaskEncoder(nn.Module):
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
         self.linear = nn.Linear(512, 64)
+        self.batch_norm = nn.BatchNorm1d(64)
 
     def forward(self, masked_scans):
         b, c, h, w = masked_scans.shape
@@ -47,6 +48,7 @@ class MaskEncoder(nn.Module):
         x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)
         x = self.linear(x[:, 0, :])
+        x = self.batch_norm(x)
         return x
     
 
@@ -136,7 +138,7 @@ class TraumaDetector(nn.Module):
 
         self.out = nn.Sequential(
             nn.Linear(128, 64),
-            nn.BatchNorm1d(32),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             # nn.Dropout(),
             # nn.Linear(64, 32),
