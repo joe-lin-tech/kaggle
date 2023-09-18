@@ -7,82 +7,125 @@ from torchvision.ops import DropBlock3d
 from params import *
 
 
-class MaskEncoder(nn.Module):
+class SegmentationLoss(nn.Module):
     def __init__(self):
-        super(MaskEncoder, self).__init__()
+        super(SegmentationLoss, self).__init__()
+        self.loss = nn.CrossEntropyLoss()
+
+    def forward(self, out, labels):
+        return self.loss(out, labels.long())
+
+class SegmentationNet(nn.Module):
+    def __init__(self):
+        super(SegmentationNet, self).__init__()
+
+        # (572, 572, 1)
+        self.encoder1 = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=3, padding=1), # (570, 570, 64)
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1), # (568, 568, 64)
+            nn.ReLU()
+        )
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # (284, 284, 64)
         
-        backbone = resnet18(ResNet18_Weights.DEFAULT)
-        # self.backbone = vit_b_16(ViT_B_16_Weights.DEFAULT)
-        # self.backbone.heads = nn.Sequential()
-        # for param in self.backbone.parameters():
-        #     param.requires_grad = False
-        # for param in self.backbone.conv_proj.parameters():
-        #     param.requires_grad = True
-        # for layer in self.backbone.encoder.layers:
-        #     for param in layer.self_attention.parameters():
-        #         param.requires_grad = True
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        for param in self.backbone[-1].parameters():
-            param.requires_grad = True
+        self.encoder2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1), # (282, 282, 128)
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1), # (280, 280, 128)
+            nn.ReLU()
+        )
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # (140, 140, 128)
 
-        self.layer_norm = nn.LayerNorm(512)
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
-        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
+        self.encoder3 = nn.Sequential(
+            nn.Conv2d(128, 256, kernel_size=3, padding=1), # (138, 138, 256)
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1), # (136, 136, 256)
+            nn.ReLU()
+        )
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # (68, 68, 256)
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+        self.encoder4 = nn.Sequential(
+            nn.Conv2d(256, 512, kernel_size=3, padding=1), # (66, 66, 512)
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1), # (64, 64, 512)
+            nn.ReLU()
+        )
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # (32, 32, 512)
 
-        self.linear = nn.Linear(512, 64)
-        self.batch_norm = nn.BatchNorm1d(64)
+        self.encoder5 = nn.Sequential(
+            nn.Conv2d(512, 1024, kernel_size=3, padding=1), # (30, 30, 1024)
+            nn.ReLU(),
+            nn.Conv2d(1024, 1024, kernel_size=3, padding=1), # (28, 28, 1024)
+            nn.ReLU()
+        )
 
-    def forward(self, masked_scans):
-        b, c, h, w = masked_scans.shape
-        x = torch.reshape(masked_scans, (b * (c // 3), 3, h, w))
-        x = self.backbone(resize(x, (224, 224)))
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = torch.flatten(x, 1)
-        x = torch.reshape(x, (b, (c // 3), 512))
-        x = self.layer_norm(x) + self.pos_embedding
-        x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
-        x = self.encoder(x)
-        x = self.linear(x[:, 0, :])
-        x = self.batch_norm(x)
-        return x
+        self.upconv1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2) 
+        self.decoder1 = nn.Sequential(
+            nn.Conv2d(1024, 512, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+
+        self.upconv2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.decoder2 = nn.Sequential(
+            nn.Conv2d(512, 256, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+
+        self.upconv3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.decoder3 = nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+
+        self.upconv4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.decoder4 = nn.Sequential(
+            nn.Conv2d(128, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+
+        self.out = nn.Conv2d(64, N_CLASSES, kernel_size=1)
     
-
-class SlicePredictor(nn.Module):
-    def __init__(self):
-        super(SlicePredictor, self).__init__()
-        backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        for param in self.backbone[-1].parameters():
-            param.requires_grad = True
-
-        self.layer_norm = nn.LayerNorm(512)
-        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
-
-        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
-
-        self.linear = nn.Linear(512, 1)
-
     def forward(self, x):
-        b, c, h, w = x.shape
-        x = x.view(b * (c // 3), 3, h, w)
-        x = self.backbone(x)
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = torch.flatten(x, 1)
-        x = torch.reshape(x, (b, (c // 3), 512))
-        x = self.layer_norm(x) + self.pos_embedding
-        x = self.encoder(x)
-        x = torch.squeeze(self.linear(x), dim=-1)
-        x = torch.sigmoid(x)
-        x = torch.squeeze(F.interpolate(x.unsqueeze(1), size=c, mode='linear'), dim=1)
-        return x
+        x1 = self.encoder1(x)
+        x = self.pool1(x1)
+
+        x2 = self.encoder2(x)
+        x = self.pool2(x2)
+
+        x3 = self.encoder3(x)
+        x = self.pool3(x3)
+
+        x4 = self.encoder4(x)
+        x = self.pool4(x4)
+
+        x = self.encoder5(x)
+
+        x = self.upconv1(x)
+        x = torch.cat([x, x4], dim=1)
+        x = self.decoder1(x)
+
+        x = self.upconv2(x)
+        x = torch.cat([x, x3], dim=1)
+        x = self.decoder2(x)
+
+        x = self.upconv3(x)
+        x = torch.cat([x, x2], dim=1)
+        x = self.decoder3(x)
+
+        x = self.upconv4(x)
+        x = torch.cat([x, x1], dim=1)
+        x = self.decoder4(x)
+
+        out = self.out(x)
+        return out
 
 
 class CombinedLoss(nn.Module):
@@ -107,9 +150,6 @@ class CombinedLoss(nn.Module):
 class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
-
-        self.mask_encoder = MaskEncoder()
-        # self.slice_predictor = SlicePredictor()
 
         backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
@@ -153,9 +193,8 @@ class TraumaDetector(nn.Module):
         self.out_liver = nn.Linear(64, 3)
         self.out_spleen = nn.Linear(64, 3)
     
-    def forward(self, scans, masked_scans):
+    def forward(self, scans):
         b, c, h, w = scans.shape
-        mask_features = self.mask_encoder(masked_scans)
         # prob = self.slice_predictor(scans)
         # sliced_scans = torch.multiply(scans, torch.reshape(prob, (prob.shape[0], prob.shape[1], 1, 1)))
 
@@ -165,7 +204,6 @@ class TraumaDetector(nn.Module):
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
-        x = torch.cat([x, mask_features], dim=1)
         x = self.out(x)
         # x = self.out(mask_features)
         kidney = self.out_kidney(x)

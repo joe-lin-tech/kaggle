@@ -41,9 +41,6 @@ wandb.init(
     }
 )
 
-model = sam_model_registry["vit_b"](Namespace(image_size=256, encoder_adapter=True, sam_checkpoint=MASK_MODEL)).to(MASK_DEVICE)
-mask_generator = SamAutomaticMaskGenerator(model, pred_iou_thresh=0.5, stability_score_thresh=0.8)
-
 data = pd.read_csv(CSV_FILE)
 
 sss = KFold(n_splits=5, shuffle=True, random_state=SEED)
@@ -55,26 +52,21 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
 
     for i, batch in enumerate(tqdm(train_dataloader)):
         scans = batch['scans'].to(DEVICE).float()
-        masked_scans = batch['masked_scans'].to(DEVICE).float()
         labels = batch['labels'].to(DEVICE)
 
         with torch.cuda.amp.autocast():
-            out = model(scans, masked_scans)
-            # out = model(scans)
+            out = model(scans)
             loss = loss_fn(out, labels)
 
         scaler.scale(loss).backward()
-        # loss.backward()
 
         if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
-            # scaler.unscale_(optimizer)
-            # torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
 
             scaler.step(optimizer)
             scaler.update()
-            # optimizer.step()
             optimizer.zero_grad()
-            # scheduler.step(epoch + i / len(train_dataloader))
         
         if ((i + 1) % LOG_INTERVAL == 0) or (i + 1 == len(train_dataloader)):
             # size = MASK_DEPTH
@@ -89,7 +81,6 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
     scheduler.step()
     wandb.log({ "current_lr": scheduler.get_last_lr()[0] })
     print(scheduler.get_last_lr())
-    # scheduler.step(losses / len(train_iter))
 
     return losses / len(train_dataloader)
 
@@ -100,11 +91,9 @@ def evaluate(val_dataloader: DataLoader, model: TraumaDetector):
     for batch in tqdm(val_dataloader):
         with torch.no_grad():
             scans = batch['scans'].to(DEVICE).float()
-            masked_scans = batch['masked_scans'].to(DEVICE).float()
             labels = batch['labels'].to(DEVICE)
 
-            out = model(scans, masked_scans)
-            # out = model(scans)
+            out = model(scans)
             loss = loss_fn(out, labels)
         
         losses += loss.item()
@@ -116,30 +105,22 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
     if RESAMPLE:
         train_data = resample(train_data)
-    train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
-                             transform=dict(
+    train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=dict(
                                  preprocess=torchvision.transforms.Compose([
-                                     torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True),
-                                    #  torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
+                                     torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True)
                                  ]),
                                  random=torchvision.transforms.Compose([
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
                                      torchvision.transforms.RandomResizedCrop((SCAN_SIZE, SCAN_SIZE), antialias=True)
                                  ])), mode='train')
-    # train_sampler = WeightedRandomSampler(train_iter.weights, len(train_iter.weights))
-    # train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, sampler=train_sampler, drop_last=True)
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=N_WORKERS)
 
-    val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, mask_generator=mask_generator,
-                           transform=dict(
+    val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=dict(
                                preprocess=torchvision.transforms.Compose([
                                    torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True),
-                                #    torchvision.transforms.Normalize(mean=40.5436, std=64.4406)
                                ])), mode='val')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
-
-    # print(get_mean_std(train_dataloader, val_dataloader))
 
     model = TraumaDetector()
     if FROM_CHECKPOINT:
@@ -148,32 +129,12 @@ for i, (train_idx, val_idx) in enumerate(splits):
     model.to(DEVICE)
     wandb.watch(model, log_freq=LOG_INTERVAL)
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
-
-    # model_lr = [
-    #     # { 'params': model.mask_encoder.backbone.parameters(), 'lr': MASK_BACKBONE_LR },
-    #     # { 'params': model.mask_encoder.fcn.parameters(), 'lr': MASK_FCN_LR },
-    #     { 'params': model.backbone[-1].parameters(), 'lr': BACKBONE_LR },
-    #     { 'params': model.head.parameters(), 'lr': HEAD_LR },
-    #     { 'params': itertools.chain(*[
-    #         model.out.parameters(),
-    #         model.out_bowel.parameters(),
-    #         model.out_extravasation.parameters(),
-    #         model.out_kidney.parameters(),
-    #         model.out_liver.parameters(),
-    #         model.out_spleen.parameters()
-    #     ]), 'lr': OUT_LR }
-    # ]
-    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9, weight_decay=1e-2)
-    # optimizer = torch.optim.Adam(model_lr, weight_decay=1e-4)
+    
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=1e-4)
-    # optimizer = torch.optim.SGD(model_lr, momentum=0.9, weight_decay=1e-3)
-    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+
     if FROM_CHECKPOINT:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=MIN_LR)
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
-    # scheduler = None
 
     loss_fn = CombinedLoss()
     scaler = GradScaler()
