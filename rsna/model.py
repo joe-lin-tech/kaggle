@@ -15,6 +15,7 @@ class SegmentationLoss(nn.Module):
     def forward(self, out, labels):
         return self.loss(out, labels.long())
 
+
 class SegmentationNet(nn.Module):
     def __init__(self):
         super(SegmentationNet, self).__init__()
@@ -176,17 +177,6 @@ class TraumaDetector(nn.Module):
             # nn.Dropout(0.4)
         )
 
-        self.out = nn.Sequential(
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            # nn.Dropout(),
-            # nn.Linear(64, 32),
-            # nn.BatchNorm1d(32),
-            # nn.ReLU(),
-            # nn.Dropout()
-        )
-
         # self.out_bowel = nn.Linear(32, 1)
         # self.out_extravasation = nn.Linear(32, 1)
         self.out_kidney = nn.Linear(64, 3)
@@ -195,8 +185,6 @@ class TraumaDetector(nn.Module):
     
     def forward(self, scans):
         b, c, h, w = scans.shape
-        # prob = self.slice_predictor(scans)
-        # sliced_scans = torch.multiply(scans, torch.reshape(prob, (prob.shape[0], prob.shape[1], 1, 1)))
 
         x = torch.reshape(scans, (b * (c // 3), 3, h, w))
         x = self.backbone(x)
@@ -204,9 +192,8 @@ class TraumaDetector(nn.Module):
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
         x = torch.flatten(x, 1)
-        x = self.out(x)
-        # x = self.out(mask_features)
         kidney = self.out_kidney(x)
         liver = self.out_liver(x)
         spleen = self.out_spleen(x)
+        
         return kidney, liver, spleen
