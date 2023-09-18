@@ -19,43 +19,43 @@ class SegmentationNet(nn.Module):
     def __init__(self):
         super(SegmentationNet, self).__init__()
 
-        # (572, 572, 1)
+        # (512, 512, 1)
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, padding=1), # (570, 570, 64)
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1), # (568, 568, 64)
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.ReLU()
         )
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # (284, 284, 64)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2) # (256, 256, 64)
         
         self.encoder2 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, padding=1), # (282, 282, 128)
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1), # (280, 280, 128)
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
             nn.ReLU()
         )
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # (140, 140, 128)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) # (128, 128, 128)
 
         self.encoder3 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, padding=1), # (138, 138, 256)
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1), # (136, 136, 256)
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU()
         )
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # (68, 68, 256)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) # (64, 64, 256)
 
         self.encoder4 = nn.Sequential(
-            nn.Conv2d(256, 512, kernel_size=3, padding=1), # (66, 66, 512)
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1), # (64, 64, 512)
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU()
         )
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2) # (32, 32, 512)
 
         self.encoder5 = nn.Sequential(
-            nn.Conv2d(512, 1024, kernel_size=3, padding=1), # (30, 30, 1024)
+            nn.Conv2d(512, 1024, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(1024, 1024, kernel_size=3, padding=1), # (28, 28, 1024)
+            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
             nn.ReLU()
         )
 
