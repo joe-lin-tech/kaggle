@@ -31,7 +31,6 @@ MASK_DEPTH = 12
 SCAN_SIZE = 256
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-MASK_DEVICE = torch.device('cpu')
 CSV_FILE = 'data/train.csv'
 ROOT_DIR = '../../rsna_data/train_images' # '/Volumes/SSD/rsna/train_images_mini_256x256'
 MASK_MODEL = '../../sam-med2d_b.pth' # '/Volumes/SSD/rsna/sam-med2d_b.pth'
