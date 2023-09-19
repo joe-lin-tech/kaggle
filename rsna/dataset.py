@@ -86,7 +86,8 @@ class RSNADataset(Dataset):
                 #     continue
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
-                slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
+                # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
+                slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
