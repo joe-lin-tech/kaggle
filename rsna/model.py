@@ -135,8 +135,8 @@ class CombinedLoss(nn.Module):
         self.kidney = nn.CrossEntropyLoss(reduction='none')
         self.liver = nn.CrossEntropyLoss(reduction='none')
         self.spleen = nn.CrossEntropyLoss(reduction='none')
-        self.organ_weights = torch.tensor([[1, 2, 4]]).T.to(DEVICE)
-        self.any_weights = torch.tensor([[6]]).to(DEVICE)
+        self.organ_weights = torch.tensor([[1.0, 2.0, 4.0]]).T.to(DEVICE)
+        self.any_weights = torch.tensor([[6.0]]).to(DEVICE)
     
     def forward(self, out, labels):
         kidney, liver, spleen = out
