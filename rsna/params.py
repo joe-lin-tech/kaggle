@@ -33,8 +33,6 @@ SCAN_SIZE = 256
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 CSV_FILE = 'data/train.csv'
 ROOT_DIR = '../../rsna_data/train_images' # '/Volumes/SSD/rsna/train_images_mini_256x256'
-MASK_MODEL = '../../sam-med2d_b.pth' # '/Volumes/SSD/rsna/sam-med2d_b.pth'
-MASK_FOLDER = 'masks/total_seg'
 
 CHECKPOINT_FOLDER = 'models/checkpoint'
 CHECKPOINT_FILE = 'models/rsna_checkpoint.pt'

@@ -6,7 +6,8 @@ import dicomsdl
 import os
 import pandas as pd
 from tqdm import tqdm
-from ..params import *
+
+MASK_FOLDER = 'masks/total_seg'
 
 ORGAN_IDS = [1, 2, 3, 5, 55]
 
