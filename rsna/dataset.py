@@ -84,8 +84,8 @@ class RSNADataset(Dataset):
             for dirname in dirs:
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
-                channels = np.linspace(0, len(files) - 1, N_CHANNELS)
-                # channels = np.linspace(len(files) // 4, 3 * len(files) // 4, N_CHANNELS)
+                # channels = np.linspace(0, len(files) - 1, N_CHANNELS)
+                channels = np.linspace(len(files) // 4, 3 * len(files) // 4, N_CHANNELS)
                 for filename in [files[int(c)] for c in channels]:
                     if self.input_type == 'dicom':
                         dcm = dicomsdl.open(os.path.join(root, dirname, filename))
