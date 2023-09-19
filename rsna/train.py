@@ -133,7 +133,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     if FROM_CHECKPOINT:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, eta_min=ETA_MIN)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min=ETA_MIN)
 
     loss_fn = CombinedLoss()
     scaler = GradScaler()
