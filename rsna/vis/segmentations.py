@@ -19,7 +19,7 @@ def find_indices(image_data):
             lower_index = i
             break
 
-    for i in range(image_data.shape[-1], -1, -1):
+    for i in range(image_data.shape[-1] - 1, -1, -1):
         if any([o in np.unique(image_data[:, :, i]) for o in ORGAN_IDS]):
             upper_index = i
             break
