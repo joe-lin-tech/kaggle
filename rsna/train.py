@@ -4,7 +4,7 @@ import torch
 import torchvision
 import torch.nn as nn
 from torch.cuda.amp.grad_scaler import GradScaler
-from dataset import RSNADataset, get_mean_std
+from dataset import RSNADataset
 from model import TraumaDetector, CombinedLoss
 from torch.utils.data import DataLoader, WeightedRandomSampler
 import wandb
@@ -12,8 +12,6 @@ from grad import log_grad_cam
 import pandas as pd
 from sklearn.model_selection import KFold
 from preprocess import resample
-from argparse import Namespace
-import itertools
 from SAM_Med2D.segment_anything import sam_model_registry
 from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
 from tqdm import tqdm
