@@ -82,7 +82,7 @@ class RSNADataset(Dataset):
         for root, dirs, _ in os.walk(path):
             for dirname in dirs:
                 if str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy' in os.listdir(TEMP_DIR):
-                    images.append(np.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy')))
+                    images.append(np.load(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy')))
                     continue
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
