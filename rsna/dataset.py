@@ -115,7 +115,7 @@ class RSNADataset(Dataset):
                         scan.append(np.array(image, dtype=np.float32))
 
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
-                mask = np.clip(np.transpose(mask_nifti.get_fdata(), (1, 0))[::-1, :, ::-1], 0, 1)
+                mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
                 # masks.append(mask)
                 images.append(np.stack(scan) * mask)
         input = images[0] # fix sample selection
