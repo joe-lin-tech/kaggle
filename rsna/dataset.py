@@ -82,11 +82,13 @@ class RSNADataset(Dataset):
         masks = []
         for root, dirs, _ in os.walk(path):
             for dirname in dirs:
+                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
+                mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 # channels = np.linspace(0, len(files) - 1, N_CHANNELS)
                 channels = np.linspace(len(files) // 4, 3 * len(files) // 4, N_CHANNELS)
-                for filename in [files[int(c)] for c in channels]:
+                for c, filename in [(int(c), files[int(c)]) for c in channels]:
                     if self.input_type == 'dicom':
                         dcm = dicomsdl.open(os.path.join(root, dirname, filename))
                         info = dcm.getPixelDataInfo()
@@ -109,15 +111,12 @@ class RSNADataset(Dataset):
                         if dcm.PhotometricInterpretation == "MONOCHROME1":
                             image = 255 - image
 
-                        scan.append(image)
+                        scan.append(image * mask[c])
                     else:
                         image = Image.open(os.path.join(root, dirname, filename))
                         scan.append(np.array(image, dtype=np.float32))
-
-                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
-                mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
                 # masks.append(mask)
-                images.append(np.stack(scan) * mask)
+                images.append(np.stack(scan))
         input = images[0] # fix sample selection
 
         input = self.transform['preprocess'](torch.tensor(input).float())
