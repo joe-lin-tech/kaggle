@@ -140,9 +140,9 @@ class CombinedLoss(nn.Module):
     
     def forward(self, out, labels):
         kidney, liver, spleen = out
-        ce_loss = self.kidney(kidney, labels[:, 2:5].float()) * (labels[:, 2:5] @ self.organ_weights) \
-            + self.liver(liver, labels[:, 5:8].float()) * (labels[:, 5:8] @ self.organ_weights) \
-                + self.spleen(spleen, labels[:, 8:11].float()) * (labels[:, 8:11] @ self.organ_weights)
+        ce_loss = self.kidney(kidney, labels[:, 2:5].float()) * (labels[:, 2:5].float() @ self.organ_weights) \
+            + self.liver(liver, labels[:, 5:8].float()) * (labels[:, 5:8].float() @ self.organ_weights) \
+                + self.spleen(spleen, labels[:, 8:11].float()) * (labels[:, 8:11].float() @ self.organ_weights)
 
         kidney, liver, spleen = F.softmax(kidney, dim=-1), F.softmax(liver, dim=-1), F.softmax(spleen, dim=-1)
         healthy = torch.cat([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]], dim=-1)
