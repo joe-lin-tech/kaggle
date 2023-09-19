@@ -122,7 +122,7 @@ class RSNADataset(Dataset):
                         scan.append(np.array(image, dtype=np.float32))
                     if (i + 1) % (SLICE_CHANNELS - 1) == 0:
                         mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
-                        mask_slice[~np.isin(ORGAN_IDS)] = 0
+                        mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
                         scan.append(mask_slice)
                 scan = np.stack(scan)
                 # np.save(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'), scan)
