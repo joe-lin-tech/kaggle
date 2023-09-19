@@ -92,9 +92,9 @@ class RSNADataset(Dataset):
                 dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
                 if dcm_start.ImagePositionPatient[2] > dcm_end.ImagePositionPatient[2]:
-                    mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
+                    mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :]
                 else:
-                    mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :], 0, 1)
+                    mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
                 channels = []
                 for s in slices:
                     channels += [int(s) - 1, int(s), int(s) + 1]
