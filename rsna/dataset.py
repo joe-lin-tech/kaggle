@@ -79,6 +79,7 @@ class RSNADataset(Dataset):
     def __getitem__(self, idx):
         path = os.path.join(self.root_dir, str(self.patient_df.iloc[idx].patient_id))
         images = []
+        masks = []
         for root, dirs, _ in os.walk(path):
             for dirname in dirs:
                 scan = []
@@ -112,7 +113,11 @@ class RSNADataset(Dataset):
                     else:
                         image = Image.open(os.path.join(root, dirname, filename))
                         scan.append(np.array(image, dtype=np.float32))
-                images.append(np.stack(scan))
+
+                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname))
+                mask = np.clip(np.transpose(mask_nifti.get_fdata(), (1, 0))[::-1, :, ::-1], 0, 1)
+                # masks.append(mask)
+                images.append(np.stack(scan) * mask)
         input = images[0] # fix sample selection
 
         input = self.transform['preprocess'](torch.tensor(input).float())
