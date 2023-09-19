@@ -6,7 +6,7 @@ import dicomsdl
 import os
 import pandas as pd
 from tqdm import tqdm
-from params import *
+from ..params import *
 
 ORGAN_IDS = [1, 2, 3, 5, 55]
 
