@@ -160,6 +160,8 @@ class TraumaDetector(nn.Module):
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         for param in self.backbone.parameters():
             param.requires_grad = False
+        for param in self.backbone[-2].parameters():
+            param.requires_grad = True
         for param in self.backbone[-1].parameters():
             param.requires_grad = True
 
@@ -167,12 +169,12 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
-            nn.Dropout3d(),
+            nn.Dropout3d(0.1),
             # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.ReLU(),
-            nn.Dropout3d(),
+            nn.Dropout3d(0.1),
             # DropBlock3d(p=0.5, block_size=3),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),

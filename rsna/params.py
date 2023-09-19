@@ -34,6 +34,7 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 CSV_FILE = 'data/train.csv'
 ROOT_DIR = '../../rsna_data/train_images' # '/Volumes/SSD/rsna/train_images_mini_256x256'
 MASK_FOLDER = 'masks/total_seg'
+TEMP_DIR = 'temp'
 
 CHECKPOINT_FOLDER = 'models/checkpoint'
 CHECKPOINT_FILE = 'models/rsna_checkpoint.pt'
