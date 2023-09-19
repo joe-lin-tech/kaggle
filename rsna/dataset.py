@@ -84,11 +84,16 @@ class RSNADataset(Dataset):
                 # if str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy' in os.listdir(TEMP_DIR):
                 #     images.append(np.load(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy')))
                 #     continue
-                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
-                mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
+                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
+                dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
+                dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
+                if dcm_start.ImagePositionPatient[2] > dcm_end.ImagePositionPatient[2]:
+                    mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
+                else:
+                    mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :], 0, 1)
                 channels = []
                 for s in slices:
                     channels += [int(s) - 1, int(s), int(s) + 1]
