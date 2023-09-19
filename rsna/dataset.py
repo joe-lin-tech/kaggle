@@ -120,7 +120,7 @@ class RSNADataset(Dataset):
                 # masks.append(mask)
                 mask = mask[[int(c) for c in channels], :, :]
                 scan = np.stack(scan) * mask
-                np.save(str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy', scan)
+                np.save(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'), scan)
                 images.append(scan)
         input = images[0] # fix sample selection
 
