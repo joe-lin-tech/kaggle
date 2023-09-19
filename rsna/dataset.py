@@ -111,12 +111,13 @@ class RSNADataset(Dataset):
                         if dcm.PhotometricInterpretation == "MONOCHROME1":
                             image = 255 - image
 
-                        scan.append(image * mask[c])
+                        scan.append(image)
                     else:
                         image = Image.open(os.path.join(root, dirname, filename))
                         scan.append(np.array(image, dtype=np.float32))
                 # masks.append(mask)
-                images.append(np.stack(scan))
+                mask = mask[[int(c) for c in channels], :, :]
+                images.append(np.stack(scan) * mask)
         input = images[0] # fix sample selection
 
         input = self.transform['preprocess'](torch.tensor(input).float())
