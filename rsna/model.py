@@ -1,8 +1,9 @@
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms.functional import resize
-from torchvision.models import resnet18, ResNet18_Weights, resnet50, ResNet50_Weights, vit_b_16, ViT_B_16_Weights
+from torchvision.models import convnext_tiny, ConvNeXt_Tiny_Weights
 from torchvision.ops import DropBlock3d
 from params import *
 
@@ -156,47 +157,50 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        backbone = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for param in self.backbone.parameters():
-            param.requires_grad = False
-        for param in self.backbone[-2].parameters():
-            param.requires_grad = True
-        for param in self.backbone[-1].parameters():
-            param.requires_grad = True
+        self.backbone = convnext_tiny(weights=ConvNeXt_Tiny_Weights.DEFAULT)
+        layer = nn.Conv2d(SLICE_CHANNELS, 96, kernel_size=(4, 4), stride=(4, 4))
+        with torch.no_grad():
+            layer.weight[:, :3] = self.backbone.features[0][0].weight
+        self.backbone.features[0][0] = layer
+        self.backbone.classifier[2] = nn.Identity()
 
-        self.head = nn.Sequential(
-            nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-            nn.BatchNorm3d(256),
-            nn.ReLU(),
-            nn.Dropout3d(0.1),
-            # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-            nn.BatchNorm3d(128),
-            nn.ReLU(),
-            nn.Dropout3d(0.1),
-            # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(64),
-            nn.ReLU(),
-            # nn.Dropout3d()
-            # nn.Dropout(0.4)
-        )
+        self.lstm = nn.LSTM(768, 256, num_layers=2, bidirectional=True)
 
         # self.out_bowel = nn.Linear(32, 1)
         # self.out_extravasation = nn.Linear(32, 1)
-        self.out_kidney = nn.Linear(64, 3)
-        self.out_liver = nn.Linear(64, 3)
-        self.out_spleen = nn.Linear(64, 3)
+        self.out_kidney = nn.Sequential(
+            nn.Linear(512, 128),
+            nn.BatchNorm1d(128),
+            nn.Dropout(0.3),
+            nn.LeakyReLU(0.1),
+            nn.Linear(128, 3),
+        )
+        self.out_liver = nn.Sequential(
+            nn.Linear(512, 128),
+            nn.BatchNorm1d(128),
+            nn.Dropout(0.3),
+            nn.LeakyReLU(0.1),
+            nn.Linear(128, 3),
+        )
+        self.out_spleen = nn.Sequential(
+            nn.Linear(512, 128),
+            nn.BatchNorm1d(128),
+            nn.Dropout(0.3),
+            nn.LeakyReLU(0.1),
+            nn.Linear(128, 3),
+        )
     
-    def forward(self, scans):
+    def forward(self, scans: Tensor):
         b, c, h, w = scans.shape
 
-        x = torch.reshape(scans, (b * (c // 3), 3, h, w))
+        x = scans.view(b * (c // SLICE_CHANNELS), SLICE_CHANNELS, h, w)
         x = self.backbone(x)
-        x = torch.reshape(x, (b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])).transpose(1, 2)
-        x = self.head(x)
-        x = F.adaptive_avg_pool3d(x, 1)
+        x = x.view(b, c // SLICE_CHANNELS, -1)
+        x, _ = self.lstm(x)
+        # x = self.head(x)
+        # x = F.adaptive_avg_pool3d(x, 1)
+        # x = torch.flatten(x, 1)
+        x = F.adaptive_avg_pool1d(torch.transpose(x, 1, 2), 1)
         x = torch.flatten(x, 1)
         kidney = self.out_kidney(x)
         liver = self.out_liver(x)

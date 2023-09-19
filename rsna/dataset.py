@@ -81,16 +81,19 @@ class RSNADataset(Dataset):
         images = []
         for root, dirs, _ in os.walk(path):
             for dirname in dirs:
-                if str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy' in os.listdir(TEMP_DIR):
-                    images.append(np.load(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy')))
-                    continue
+                # if str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy' in os.listdir(TEMP_DIR):
+                #     images.append(np.load(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy')))
+                #     continue
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask = np.clip(np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :], 0, 1)
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
-                # channels = np.linspace(0, len(files) - 1, N_CHANNELS)
-                channels = np.linspace(len(files) // 4, 3 * len(files) // 4, N_CHANNELS)
-                for filename in [files[int(c)] for c in channels]:
+                slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
+                channels = []
+                for s in slices:
+                    channels += [int(s) - 1, int(s), int(s) + 1]
+                # channels = np.linspace(len(files) // 4, 3 * len(files) // 4, N_CHANNELS)
+                for i, filename in enumerate([files[c] for c in channels]):
                     if self.input_type == 'dicom':
                         dcm = dicomsdl.open(os.path.join(root, dirname, filename))
                         info = dcm.getPixelDataInfo()
@@ -117,10 +120,10 @@ class RSNADataset(Dataset):
                     else:
                         image = Image.open(os.path.join(root, dirname, filename))
                         scan.append(np.array(image, dtype=np.float32))
-                # masks.append(mask)
-                mask = mask[[int(c) for c in channels], :, :]
-                scan = np.stack(scan) * mask
-                np.save(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'), scan)
+                    if (i + 1) % (SLICE_CHANNELS - 1) == 0:
+                        scan.append(mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :])
+                scan = np.stack(scan)
+                # np.save(os.path.join(TEMP_DIR, str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'), scan)
                 images.append(scan)
         input = images[0] # fix sample selection
 
