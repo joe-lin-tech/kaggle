@@ -28,14 +28,14 @@ def find_indices(image_data):
 
 lower_indices = []
 upper_indices = []
-for root, _, files in os.walk(MASK_FOLDER):
-    for file in tqdm(files):
+for root, _, files in tqdm(os.walk(MASK_FOLDER)):
+    for file in files:
         nifti_image = nib.load(os.path.join(root, file))
         image_data = nifti_image.get_fdata()
         lower_index, upper_index = find_indices(image_data)
         lower_indices.append(lower_index)
         upper_indices.append(upper_index)
-print(min(lower_indices), max(upper_indices))
+    print(min(lower_indices), max(upper_indices))
 
 
 # files = natsorted(os.listdir(DICOM_FOLDER))
