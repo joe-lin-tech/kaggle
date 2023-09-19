@@ -35,7 +35,8 @@ for root, _, files in tqdm(os.walk(MASK_FOLDER)):
         lower_index, upper_index = find_indices(image_data)
         lower_indices.append(lower_index)
         upper_indices.append(upper_index)
-    print(min(lower_indices), max(upper_indices))
+    if len(lower_indices) > 0 and len(upper_indices) > 0:
+        print(min(lower_indices), max(upper_indices))
 
 
 # files = natsorted(os.listdir(DICOM_FOLDER))
