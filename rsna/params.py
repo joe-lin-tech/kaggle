@@ -29,6 +29,8 @@ OVERSAMPLING_WEIGHTS = {
     'spleen': 2
 }
 
+ORGAN_IDS = [1, 2, 3, 5, 55]
+
 EPOCHS = 40
 MASK_DEPTH = 12
 SCAN_SIZE = 256
