@@ -10,7 +10,7 @@ from PIL import Image
 from natsort import natsorted
 import pydicom as dicom
 import nibabel as nib
-from utils import pad_scan, scale_scan, preprocess_scan
+from utils import pad_scan, scale_scan, preprocess_slice_predict, postprocess_slice_predict, preprocess_scan
 import dicomsdl
 from tqdm import tqdm
 from typing import Literal
@@ -82,7 +82,7 @@ class SlicePredictionDataset(Dataset):
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
-                slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
+                # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
                 indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
@@ -90,10 +90,11 @@ class SlicePredictionDataset(Dataset):
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
                 dx, dy = dcm_start.PixelSpacing
                 dz = np.abs((dcm_end.ImagePositionPatient[2] - dcm_start.ImagePositionPatient[2]) / len(files))
-                channels = []
-                for s in slices:
-                    channels += [int(s) - 1, int(s), int(s) + 1]
-                for i, filename in enumerate([files[c] for c in channels]):
+                # channels = []
+                # for s in slices:
+                #     channels += [int(s) - 1, int(s), int(s) + 1]
+                # for i, filename in enumerate([files[c] for c in channels]):
+                for filename in files:
                     dcm = dicomsdl.open(os.path.join(root, dirname, filename))
                     info = dcm.getPixelDataInfo()
                     pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
@@ -121,6 +122,7 @@ class SlicePredictionDataset(Dataset):
                     scan = scan[::-1]
                 scan = pad_scan(scan)
                 scan = scale_scan(scan, (dz, dy, dx))
+                scan = preprocess_slice_predict(scan)
                 images.append(scan)
                 break # TODO - use both scans
         input = images[0] # fix sample selection
@@ -155,7 +157,7 @@ class RSNADataset(Dataset):
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
-                slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
+                # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
                 indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
@@ -170,10 +172,11 @@ class RSNADataset(Dataset):
                 #     mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :]
                 # else:
                 #     mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
-                channels = []
-                for s in slices:
-                    channels += [int(s) - 1, int(s), int(s) + 1]
-                for i, filename in enumerate([files[c] for c in channels]):
+                # channels = []
+                # for s in slices:
+                #     channels += [int(s) - 1, int(s), int(s) + 1]
+                # for i, filename in enumerate([files[c] for c in channels]):
+                for filename in files:
                     if self.input_type == 'dicom':
                         dcm = dicomsdl.open(os.path.join(root, dirname, filename))
                         info = dcm.getPixelDataInfo()
@@ -210,7 +213,7 @@ class RSNADataset(Dataset):
                 scan = torch.tensor(scan).float()
                 scan = pad_scan(scan)
                 scan = scale_scan(scan, (dz, dy, dx))
-                scan = preprocess_scan(scan, (min_index, max_index))
+                scan = preprocess_scan(scan)
                 images.append(scan)
                 break # TODO - use both scans
         input = images[0] # fix sample selection

@@ -1,3 +1,4 @@
+import torch
 import torch.nn.functional as F
 from params import *
 
@@ -22,11 +23,61 @@ def scale_scan(scan, slice_spacing):
         ).squeeze(0).squeeze(0)
     return scan
 
-def preprocess_scan(scan, indices):
-    sliced_scan = scan[indices[0]:indices[1]]
-    sliced_scan = F.interpolate(
-        sliced_scan.unsqueeze(0).unsqueeze(0),
+def scale_prob(prob, channels):
+    prob = F.interpolate(
+        prob.unsqueeze(0),
+        size=(channels),
+        mode='linear'
+    ).squeeze(0).squeeze(0)
+    return prob
+
+def preprocess_slice_predict(slice):
+    d, s, s = slice.shape
+    D = int(SLICE_SIZE / s * d)
+
+    slice = F.interpolate(
+            slice.unsqueeze(0).unsqueeze(0),
+            size=(D, SLICE_SIZE, SLICE_SIZE),
+            mode='trilinear'
+        ).squeeze(0).squeeze(0)
+
+    # pad or crop to max length L
+    if N_CHANNELS > D:
+        slice = F.pad(slice, [0, 0, 0, 0, 0, N_CHANNELS - D], mode='constant', value=0)
+    
+    if N_CHANNELS < D:
+        slice = slice[:N_CHANNELS]
+    
+    return slice
+
+def postprocess_slice_predict(slice, scan, prob):
+    d1, s1, s1 = slice.shape
+    d2, s2, s2 = scan.shape
+
+    D = int(s2 / s1 * d1)
+    prob = F.interpolate(
+            prob.unsqueeze(0),
+            size=(D),
+            mode='linear'
+        ).squeeze(0).squeeze(0)
+
+    # unpad or uncrop to max length L
+    if d2 > D:
+        prob = F.pad(prob, [0, d2 - D], mode='constant', value=0)
+
+    return prob
+
+# def preprocess_scan(scan, prob):
+    # indices = torch.where(prob > 0)[0]
+    # if len(indices) == 0:
+    #     start, end = 0, N_CHANNELS
+    # else:
+    #     start, end = indices.min().item(), indices.max().item()
+    # sliced_scan = scan[start, end]
+def preprocess_scan(scan):
+    scan = F.interpolate(
+        scan.unsqueeze(0).unsqueeze(0),
         size=(N_CHANNELS, SCAN_SIZE, SCAN_SIZE),
         mode='trilinear'
     ).squeeze(0).squeeze(0)
-    return sliced_scan
+    return scan
