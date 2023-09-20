@@ -211,7 +211,7 @@ class TraumaDetector(nn.Module):
     def forward(self, scans: Tensor):
         b, c, h, w = scans.shape
 
-        x = scans.view(b * (c // SLICE_CHANNELS), SLICE_CHANNELS, h, w)
+        x = scans.view(b * (c // 3), 3, h, w)
         x = self.backbone(x)
         x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1]).transpose(1, 2)
         x = self.head(x)
