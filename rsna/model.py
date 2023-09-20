@@ -213,10 +213,11 @@ class TraumaDetector(nn.Module):
 
         x = scans.view(b * (c // 3), 3, h, w)
         x = self.backbone(x)
-        x = x.view(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1]).transpose(1, 2)
+        x = x.reshape(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])
+        x = x.permute(0, 2, 1, 3, 4).contiguous()
         x = self.head(x)
         x = F.adaptive_avg_pool3d(x, 1)
-        x = torch.flatten(x, 1)
+        x = x.reshape(b, -1)
         kidney = self.out_kidney(x)
         liver = self.out_liver(x)
         spleen = self.out_spleen(x)
