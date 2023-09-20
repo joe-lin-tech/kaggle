@@ -197,11 +197,7 @@ class TraumaDetector(nn.Module):
         x = self.backbone(x)
         x = x.view(b, c // SLICE_CHANNELS, -1)
         x, _ = self.lstm(x)
-        # x = self.head(x)
-        # x = F.adaptive_avg_pool3d(x, 1)
-        # x = torch.flatten(x, 1)
-        x = F.adaptive_max_pool1d(torch.transpose(x, 1, 2), 1)
-        x = torch.flatten(x, 1)
+        x = x[:, -1, :]
         kidney = self.out_kidney(x)
         liver = self.out_liver(x)
         spleen = self.out_spleen(x)
