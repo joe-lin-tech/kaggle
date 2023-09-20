@@ -67,13 +67,12 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
             optimizer.zero_grad()
         
         if ((i + 1) % LOG_INTERVAL == 0) or (i + 1 == len(train_dataloader)):
-            # size = MASK_DEPTH
-            input = [wandb.Image(scans[0, i, :, :]) for i in range(SLICE_CHANNELS - 1, N_CHANNELS, SLICE_CHANNELS)]
-            # masked = [wandb.Image(masked_scans[0, c, :, :]) for c in range(size // 2, N_CHANNELS, size)]
+            # raw = [wandb.Image(scans[0, i - 2, :, :]) for i in range(SLICE_CHANNELS - 1, N_CHANNELS, SLICE_CHANNELS)]
+            # mask = [wandb.Image(scans[0, i, :, :]) for i in range(SLICE_CHANNELS - 1, N_CHANNELS, SLICE_CHANNELS)]
             # cam = log_grad_cam(model=model, target_layers=model.mask_encoder.backbone.encoder.layers.encoder_layer_10.ln1,
             #                    input_tensor={ 'scans': scans[0], 'masked_scans': masked_scans[0] })
-            # wandb.log({ "raw": raw, "masked": masked, "loss": loss.item() })
-            wandb.log({ "loss": loss.item(), "input": input })
+            # wandb.log({ "loss": loss.item(), "raw": raw, "mask": mask })
+            wandb.log({ "loss": loss.item() })
 
         losses += loss.item()
     scheduler.step()
