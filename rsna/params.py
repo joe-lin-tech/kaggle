@@ -5,7 +5,8 @@ ACCUM_ITER = 4
 N_SLICES = 40
 SIDE_CHANNELS = 1
 SLICE_CHANNELS = 2 * (SIDE_CHANNELS + 1)
-N_CHANNELS = N_SLICES * SLICE_CHANNELS
+# N_CHANNELS = N_SLICES * SLICE_CHANNELS
+N_CHANNELS = 96
 N_WORKERS = 2
 N_CLASSES = 6
 LOG_INTERVAL = 4
@@ -29,10 +30,12 @@ OVERSAMPLING_WEIGHTS = {
     'spleen': 2
 }
 
-ORGAN_IDS = [1, 2, 3, 5, 55]
+# ORGAN_IDS = [1, 2, 3, 5, 55]
+ORGAN_IDS = [1, 2, 3, 5]
 
 EPOCHS = 40
 MASK_DEPTH = 12
+SLICE_SIZE = 160
 SCAN_SIZE = 256
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
