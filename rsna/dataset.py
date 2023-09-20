@@ -159,7 +159,9 @@ class RSNADataset(Dataset):
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
                 indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
-                min_index, max_index = np.min(indices), np.max(indices)
+                min_index, max_index = 0, len(files)
+                if len(indices > 0):
+                    min_index, max_index = np.min(indices), np.max(indices)
                 dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
                 dx, dy = dcm_start.PixelSpacing
@@ -208,7 +210,7 @@ class RSNADataset(Dataset):
                 scan = torch.tensor(scan).float()
                 scan = pad_scan(scan)
                 scan = scale_scan(scan, (dz, dy, dx))
-                scan = preprocess_scan(scan, indices)
+                scan = preprocess_scan(scan, (min_index, max_index))
                 images.append(scan)
                 break # TODO - use both scans
         input = images[0] # fix sample selection
