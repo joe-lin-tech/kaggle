@@ -210,7 +210,7 @@ class RSNADataset(Dataset):
                 scan = np.stack(scan)
                 if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
                     scan = scan[::-1]
-                scan = torch.tensor(scan).float()
+                scan = torch.tensor(scan.copy()).float()
                 scan = pad_scan(scan)
                 scan = scale_scan(scan, (dz, dy, dx))
                 scan = preprocess_scan(scan)
