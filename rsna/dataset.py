@@ -158,12 +158,12 @@ class RSNADataset(Dataset):
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
                 # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
-                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
-                mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
-                indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
-                min_index, max_index = 0, len(files)
-                if len(indices > 0):
-                    min_index, max_index = np.min(indices), np.max(indices)
+                # mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
+                # mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
+                # indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
+                # min_index, max_index = 0, len(files)
+                # if len(indices > 0):
+                #     min_index, max_index = np.min(indices), np.max(indices)
                 dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
                 dx, dy = dcm_start.PixelSpacing
