@@ -202,7 +202,7 @@ class RSNADataset(Dataset):
                     #     mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
                     #     mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
                     #     scan.append(mask_slice)
-                scan = np.stack(scan)
+                scan = torch.stack(scan)
                 if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
                     scan = scan[::-1]
                 scan = pad_scan(scan)
@@ -212,7 +212,7 @@ class RSNADataset(Dataset):
                 break # TODO - use both scans
         input = images[0] # fix sample selection
 
-        input = self.transform['preprocess'](torch.tensor(input).float())
+        input = self.transform['preprocess'](input.float())
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), cols[4:7], cols[7:10], cols[10:],
