@@ -185,7 +185,7 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        backbone = resnet50()
+        backbone = resnet18()
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         
         self.head = nn.Sequential(

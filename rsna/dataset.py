@@ -158,9 +158,9 @@ class RSNADataset(Dataset):
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
                 # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
                 # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
-                # mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
-                # mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
-                # indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
+                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
+                mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
+                indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
                 # min_index, max_index = 0, len(files)
                 # if len(indices > 0):
                 #     min_index, max_index = np.min(indices), np.max(indices)
@@ -212,8 +212,10 @@ class RSNADataset(Dataset):
                     scan = scan[::-1]
                 scan = torch.tensor(scan.copy()).float()
                 scan = pad_scan(scan)
-                scan = scale_scan(scan, (dz, dy, dx))
-                scan = preprocess_scan(scan)
+                prob = torch.zeros(len(files))
+                prob[indices] = 1
+                scan, prob = scale_scan(scan, (dz, dy, dx), prob)
+                scan = preprocess_scan(scan, prob)
                 images.append(scan)
                 break # TODO - use both scans
         input = images[0] # fix sample selection
