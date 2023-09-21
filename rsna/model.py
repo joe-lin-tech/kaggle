@@ -189,7 +189,7 @@ class TraumaDetector(nn.Module):
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
         
         self.head = nn.Sequential(
-            nn.Conv3d(2048, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+            nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
             nn.Dropout3d(0.3),

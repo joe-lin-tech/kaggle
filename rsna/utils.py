@@ -34,7 +34,6 @@ def scale_scan(scan, slice_spacing, prob=None):
 def preprocess_slice_predict(slice, prob=None):
     d, s, s = slice.shape
     D = int(SLICE_SIZE / s * d)
-    print(D)
 
     slice = F.interpolate(
             slice.unsqueeze(0).unsqueeze(0),
@@ -66,7 +65,6 @@ def postprocess_slice_predict(slice, scan, prob):
     d2, s2, s2 = scan.shape
 
     D = int(s2 / s1 * d1)
-    print(D)
     prob = F.interpolate(
             prob.unsqueeze(0).unsqueeze(0),
             size=(D),
