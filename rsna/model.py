@@ -191,12 +191,7 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        backbone = resnet18(weights=ResNet18_Weights)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        for param in self.backbone[-2].parameters():
-            param.requires_grad = True
-        for param in self.backbone[-1].parameters():
-            param.requires_grad = True
+        self.backbone = resnet18(weights=None)
         
         self.head = nn.Sequential(
             nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
