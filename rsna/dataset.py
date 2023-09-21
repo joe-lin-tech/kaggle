@@ -176,38 +176,43 @@ class RSNADataset(Dataset):
                 # for s in slices:
                 #     channels += [int(s) - 1, int(s), int(s) + 1]
                 # for i, filename in enumerate([files[c] for c in channels]):
-                for filename in files:
-                    if self.input_type == 'dicom':
-                        dcm = dicomsdl.open(os.path.join(root, dirname, filename))
-                        info = dcm.getPixelDataInfo()
-                        pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
-                        dcm.copyFrameData(0, pixel_array)
-                    
-                        if dcm.PixelRepresentation == 1:
-                            bit_shift = dcm.BitsAllocated - dcm.BitsStored
-                            pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
-                            
-                        if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
-                            pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
-                            center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
-                            low = center - 0.5 - (width - 1) // 2
-                            high = center - 0.5 + (width - 1) // 2
-
-                            image = np.empty_like(pixel_array, dtype=np.uint8)
-                            dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
+                save_file = str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'
+                if save_file in os.listdir(TEMP_DIR):
+                    scan = np.load(os.path.join(TEMP_DIR, save_file))
+                else:
+                    for filename in files:
+                        if self.input_type == 'dicom':
+                            dcm = dicomsdl.open(os.path.join(root, dirname, filename))
+                            info = dcm.getPixelDataInfo()
+                            pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
+                            dcm.copyFrameData(0, pixel_array)
                         
-                        if dcm.PhotometricInterpretation == "MONOCHROME1":
-                            image = 255 - image
+                            if dcm.PixelRepresentation == 1:
+                                bit_shift = dcm.BitsAllocated - dcm.BitsStored
+                                pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
+                                
+                            if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
+                                pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
+                                center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
+                                low = center - 0.5 - (width - 1) // 2
+                                high = center - 0.5 + (width - 1) // 2
 
-                        scan.append(image)
-                    else:
-                        image = Image.open(os.path.join(root, dirname, filename))
-                        scan.append(np.array(image, dtype=np.float32))
-                    # if (i + 1) % (SLICE_CHANNELS - 1) == 0:
-                    #     mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
-                    #     mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
-                    #     scan.append(mask_slice)
-                scan = np.stack(scan)
+                                image = np.empty_like(pixel_array, dtype=np.uint8)
+                                dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
+                            
+                            if dcm.PhotometricInterpretation == "MONOCHROME1":
+                                image = 255 - image
+
+                            scan.append(image)
+                        else:
+                            image = Image.open(os.path.join(root, dirname, filename))
+                            scan.append(np.array(image, dtype=np.float32))
+                        # if (i + 1) % (SLICE_CHANNELS - 1) == 0:
+                        #     mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
+                        #     mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
+                        #     scan.append(mask_slice)
+                    scan = np.stack(scan)
+                    np.save(os.path.join(TEMP_DIR, save_file), scan)
                 if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
                     scan = scan[::-1]
                 scan = torch.tensor(scan.copy()).float()
