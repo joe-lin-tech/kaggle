@@ -12,8 +12,6 @@ from grad import log_grad_cam
 import pandas as pd
 from sklearn.model_selection import KFold
 from preprocess import resample
-from SAM_Med2D.segment_anything import sam_model_registry
-from SAM_Med2D.segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
 from tqdm import tqdm
 from timeit import default_timer as timer
 from params import *
@@ -128,11 +126,12 @@ for i, (train_idx, val_idx) in enumerate(splits):
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
-
     if FROM_CHECKPOINT:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min=ETA_MIN)
+    if FROM_CHECKPOINT:
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     loss_fn = CombinedLoss()
     scaler = GradScaler()
