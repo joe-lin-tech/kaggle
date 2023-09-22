@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 import csv
 import os
+import nibabel as nib
+from utils import pad_scan, scale_scan, preprocess_scan
+from natsort import natsorted
 from params import *
 import dicomsdl
 
@@ -81,59 +84,78 @@ for i in range(len(patient_df)):
     for root, dirs, _ in os.walk(path):
         for dirname in dirs:
             scan = []
-            files = os.listdir(os.path.join(root, dirname))
-            channels = np.linspace(0, len(files) - 1, N_CHANNELS)
-            for filename in [files[int(c)] for c in channels]:
-                dcm = dicomsdl.open(os.path.join(root, dirname, filename))
-                info = dcm.getPixelDataInfo()
-                pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
-                dcm.copyFrameData(0, pixel_array)
-            
-                if dcm.PixelRepresentation == 1:
-                    bit_shift = dcm.BitsAllocated - dcm.BitsStored
-                    pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
-                    
-                if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
-                    pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
-                    center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
-                    low = center - 0.5 - (width - 1) // 2
-                    high = center - 0.5 + (width - 1) // 2
-
-                    image = np.empty_like(pixel_array, dtype=np.uint8)
-                    dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
+            files = natsorted(os.listdir(os.path.join(root, dirname)))
+            # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
+            # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
+            mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(patient_df.iloc[i].patient_id), dirname + '.nii.gz'))
+            mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
+            indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
+            # min_index, max_index = 0, len(files)
+            # if len(indices > 0):
+            #     min_index, max_index = np.min(indices), np.max(indices)
+            dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
+            dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
+            dx, dy = dcm_start.PixelSpacing
+            dz = np.abs((dcm_end.ImagePositionPatient[2] - dcm_start.ImagePositionPatient[2]) / len(files))
+            # if dcm_start.ImagePositionPatient[2] > dcm_end.ImagePositionPatient[2]:
+            #     mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :]
+            # else:
+            #     mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
+            # channels = []
+            # for s in slices:
+            #     channels += [int(s) - 1, int(s), int(s) + 1]
+            # for i, filename in enumerate([files[c] for c in channels]):
+            save_file = str(patient_df.iloc[i].patient_id) + '_' + dirname + '.npy'
+            if save_file in os.listdir(TEMP_DIR):
+                scan = np.load(os.path.join(TEMP_DIR, save_file))
+            else:
+                for filename in files:
+                    dcm = dicomsdl.open(os.path.join(root, dirname, filename))
+                    info = dcm.getPixelDataInfo()
+                    pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
+                    dcm.copyFrameData(0, pixel_array)
                 
-                if dcm.PhotometricInterpretation == "MONOCHROME1":
-                    image = 255 - image
+                    if dcm.PixelRepresentation == 1:
+                        bit_shift = dcm.BitsAllocated - dcm.BitsStored
+                        pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
+                        
+                    if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
+                        pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
+                        center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
+                        low = center - 0.5 - (width - 1) // 2
+                        high = center - 0.5 + (width - 1) // 2
 
-                scan.append(image)
-            images.append(np.stack(scan))
+                        image = np.empty_like(pixel_array, dtype=np.uint8)
+                        dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
+                    
+                    if dcm.PhotometricInterpretation == "MONOCHROME1":
+                        image = 255 - image
+
+                    scan.append(image)
+                scan = np.stack(scan)
+                np.save(os.path.join(TEMP_DIR, save_file), scan)
+            if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
+                scan = scan[::-1]
+            scan = torch.tensor(scan.copy()).float()
+            scan = pad_scan(scan)
+            prob = torch.zeros(len(files))
+            prob[indices] = 1
+            scan, prob = scale_scan(scan, (dz, dy, dx), prob)
+            scan = preprocess_scan(scan, prob)
+            images.append(scan)
+            break
     input = images[0] # fix sample selection
 
     input = transform(torch.tensor(input).float())
-    # masked_input = resize(input.clone(), (256, 256))
-
-    # size = MASK_DEPTH # 12
-    # if f.name + '.npz' in os.listdir(os.path.join(MASK_FOLDER, 'train')):
-    #     masks = np.load(os.path.join(MASK_FOLDER, 'train', f.name + '.npz'))
-    # else:
-    #     masks = np.load(os.path.join(MASK_FOLDER, 'val', f.name + '.npz'))
-    
-    # for i in range(size // 2, N_CHANNELS, size):
-    #     masked_input[i - (size // 2):i + (size // 2), :, :] *= masks[str(i)]
 
     batch_id.append(f.name)
     batch_input.append(input)
-    # batch_masked_input.append(masked_input)
     if len(batch_id) == BATCH_SIZE:
-        # predict(model, batch_id, batch_input, batch_masked_input)
         predict(model, batch_id, batch_input)
         batch_id.clear()
         batch_input.clear()
-        # batch_masked_input.clear()
 
 if len(batch_id) > 0:
-    # predict(model, batch_id, batch_input, batch_masked_input)
     predict(model, batch_id, batch_input)
     batch_id.clear()
     batch_input.clear()
-    # batch_masked_input.clear()
