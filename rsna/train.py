@@ -100,24 +100,17 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_data, val_data = data.iloc[train_idx], data.iloc[val_idx]
     if RESAMPLE:
         train_data = resample(train_data)
-    train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=dict(
-                                 preprocess=torchvision.transforms.Compose([
-                                     torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True)
-                                 ]),
-                                 random=torchvision.transforms.Compose([
+    train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
                                     #  torchvision.transforms.ColorJitter(brightness=0.2),
                                     #  torchvision.transforms.ColorJitter(contrast=0.2),
                                     #  torchvision.transforms.RandomAffine(degrees=0, shear=10)
                                     #  torchvision.transforms.RandomResizedCrop((SCAN_SIZE, SCAN_SIZE), antialias=True)
-                                 ])), mode='train')
+                                 ]), mode='train')
     train_dataloader = DataLoader(train_iter, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=N_WORKERS)
 
-    val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, transform=dict(
-                               preprocess=torchvision.transforms.Compose([
-                                   torchvision.transforms.Resize((SCAN_SIZE, SCAN_SIZE), antialias=True),
-                               ])), mode='val')
+    val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, mode='val')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
 
     model = TraumaDetector()
