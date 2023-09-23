@@ -107,8 +107,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
                                  random=torchvision.transforms.Compose([
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
-                                     torchvision.transforms.ColorJitter(brightness=0.2),
-                                     torchvision.transforms.ColorJitter(contrast=0.2),
+                                    #  torchvision.transforms.ColorJitter(brightness=0.2),
+                                    #  torchvision.transforms.ColorJitter(contrast=0.2),
                                     #  torchvision.transforms.RandomAffine(degrees=0, shear=10)
                                     #  torchvision.transforms.RandomResizedCrop((SCAN_SIZE, SCAN_SIZE), antialias=True)
                                  ])), mode='train')
