@@ -164,8 +164,8 @@ class CombinedLoss(nn.Module):
         self.kidney = nn.CrossEntropyLoss(reduction='none')
         self.liver = nn.CrossEntropyLoss(reduction='none')
         self.spleen = nn.CrossEntropyLoss(reduction='none')
-        self.organ_weights = torch.tensor([[1.0, 2.0, 4.0]]).T.to(DEVICE)
-        self.any_weights = torch.tensor([[6.0]]).to(DEVICE)
+        self.organ_weights = torch.tensor([1.0, 2.0, 4.0]).to(DEVICE)
+        self.any_weights = torch.tensor([6.0]).to(DEVICE)
         # self.kidney = nn.CrossEntropyLoss()
         # self.liver = nn.CrossEntropyLoss()
         # self.spleen = nn.CrossEntropyLoss()
@@ -185,6 +185,8 @@ class CombinedLoss(nn.Module):
         any_injury = torch.clamp(any_injury, 1e-7, 1 - 1e-7)
         any_loss = torch.neg(labels[:, 11:12] * torch.log(any_injury) + (1 - labels[:, 11:12]) * torch.log(1 - any_injury)) * (labels[:, 11:12].float() @ self.any_weights + 1)
         # any_loss = torch.mean(any_loss, dim=0)
+
+        # return ce_loss + any_loss
         return torch.mean(ce_loss + any_loss, dim=0)
     
 
