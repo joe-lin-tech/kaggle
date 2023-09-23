@@ -184,8 +184,8 @@ class CombinedLoss(nn.Module):
         any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
         any_injury = torch.clamp(any_injury, 1e-7, 1 - 1e-7)
         any_loss = torch.neg(labels[:, 11:12] * torch.log(any_injury) + (1 - labels[:, 11:12]) * torch.log(1 - any_injury)) * (labels[:, 11:12].float() @ self.any_weights + 1)
-        any_loss = torch.mean(any_loss, dim=0)
-        return ce_loss + any_loss
+        # any_loss = torch.mean(any_loss, dim=0)
+        return torch.mean(ce_loss + any_loss, dim=0)
     
 
 class TraumaDetector(nn.Module):
