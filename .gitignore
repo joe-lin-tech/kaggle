@@ -1,10 +1,8 @@
-data
 __pycache__
-runs
+data
 models
+masks
+wandb
 kaggle.pem
 .DS_Store
 *.csv
-SAM_Med2D
-masks
-wandb
