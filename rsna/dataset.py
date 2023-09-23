@@ -218,7 +218,7 @@ class RSNADataset(Dataset):
 
         input = self.transform['preprocess'](input)
         if self.mode == 'train':
-            input = self.transform['random'](input.unsqueeze(1)).squeeze(1)
+            input = self.transform['random'](input)
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), cols[4:7], cols[7:10], cols[10:],
