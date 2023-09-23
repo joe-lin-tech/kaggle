@@ -65,74 +65,65 @@ class SegmentationDataset(Dataset):
     
 
 class SlicePredictionDataset(Dataset):
-    def __init__(self, split, root_dir, transform = None, mode: Literal['train', 'val'] = 'train'):
-        self.patient_df = split
+    def __init__(self, root_dir, transform = None, mode: Literal['train', 'val'] = 'train'):
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
+        self.slices = []
+        for _, patients, _ in os.walk(self.root_dir):
+            for patient in patients:
+                for root, scans, _ in os.walk(os.path.join(self.root_dir, patient)):
+                    for scan in scans:
+                        mask_nifti = nib.load(os.path.join(MASK_FOLDER, patient, scan + '.nii.gz'))
+                        mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
+                        indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
+                        files = natsorted(os.listdir(os.path.join(root, scan)))
+                        dcm_start = dicomsdl.open(os.path.join(root, scan, files[0]))
+                        dcm_end = dicomsdl.open(os.path.join(root, scan, files[-1]))
+                        if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
+                            indices = reversed(indices)
+                        for i, filename in files:
+                            self.slices.append({
+                                'input_path': os.path.join(root, scan, filename),
+                                'label': indices[i]
+                            })
     
     def __len__(self):
-        return len(self.patient_df)
+        return len(self.slices)
     
     def __getitem__(self, idx):
-        path = os.path.join(self.root_dir, str(self.patient_df.iloc[idx].patient_id))
-        images = []
-        for root, dirs, _ in os.walk(path):
-            for dirname in dirs:
-                scan = []
-                files = natsorted(os.listdir(os.path.join(root, dirname)))
-                # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
-                # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
-                mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
-                mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
-                indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
-                dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
-                dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
-                dx, dy = dcm_start.PixelSpacing
-                dz = np.abs((dcm_end.ImagePositionPatient[2] - dcm_start.ImagePositionPatient[2]) / len(files))
-                # channels = []
-                # for s in slices:
-                #     channels += [int(s) - 1, int(s), int(s) + 1]
-                # for i, filename in enumerate([files[c] for c in channels]):
-                for filename in files:
-                    dcm = dicomsdl.open(os.path.join(root, dirname, filename))
-                    info = dcm.getPixelDataInfo()
-                    pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
-                    dcm.copyFrameData(0, pixel_array)
-                
-                    if dcm.PixelRepresentation == 1:
-                        bit_shift = dcm.BitsAllocated - dcm.BitsStored
-                        pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
-                        
-                    if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
-                        pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
-                        center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
-                        low = center - 0.5 - (width - 1) // 2
-                        high = center - 0.5 + (width - 1) // 2
+        slice = self.slices[idx]
+        dcm = dicomsdl.open(slice['input_path'])
+        info = dcm.getPixelDataInfo()
+        pixel_array = np.empty((info['Rows'], info['Cols']), dtype=info['dtype'])
+        dcm.copyFrameData(0, pixel_array)
+    
+        if dcm.PixelRepresentation == 1:
+            bit_shift = dcm.BitsAllocated - dcm.BitsStored
+            pixel_array = (pixel_array << bit_shift).astype(pixel_array.dtype) >> bit_shift
+            
+        if hasattr(dcm, 'RescaleIntercept') and hasattr(dcm, 'RescaleSlope'):
+            pixel_array = (pixel_array.astype(np.float32) * dcm.RescaleSlope) + dcm.RescaleIntercept
+            center, width = int(dcm.WindowCenter), int(dcm.WindowWidth)
+            low = center - 0.5 - (width - 1) // 2
+            high = center - 0.5 + (width - 1) // 2
 
-                        image = np.empty_like(pixel_array, dtype=np.uint8)
-                        dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
-                    
-                    if dcm.PhotometricInterpretation == "MONOCHROME1":
-                        image = 255 - image
+            image = np.empty_like(pixel_array, dtype=np.uint8)
+            dicomsdl.util.convert_to_uint8(pixel_array, image, low, high)
+        
+        if dcm.PhotometricInterpretation == "MONOCHROME1":
+            image = 255 - image
 
-                    scan.append(image)
-                scan = np.stack(scan)
-                if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
-                    scan = scan[::-1]
-                scan = pad_scan(scan)
-                scan = scale_scan(scan, (dz, dy, dx))
-                scan = preprocess_slice_predict(scan)
-                images.append(scan)
-                break # TODO - use both scans
-        input = images[0] # fix sample selection
+        image = torch.tensor(image.copy()).float().unsqueeze(0)
+        image = pad_scan(image)
 
-        input = self.transform['preprocess'](torch.tensor(input).float())
+        image = self.transform['preprocess'](image)
+        if self.mode == 'train':
+            image = self.transform['random'](image)
 
-        label = np.zeros(len(input), 1)
-        label[indices] = 1
+        label = slice['label']
 
-        return { 'scans': input, 'labels': label }
+        return { 'input': image, 'labels': label }
 
 
 class RSNADataset(Dataset):
@@ -226,7 +217,8 @@ class RSNADataset(Dataset):
         input = images[0] # fix sample selection
 
         input = self.transform['preprocess'](input)
-        input = self.transform['random'](input.unsqueeze(1)).squeeze(1)
+        if self.mode == 'train':
+            input = self.transform['random'](input.unsqueeze(1)).squeeze(1)
 
         cols = self.patient_df.iloc[idx].to_numpy()[1:]
         label = np.hstack([np.argmax(cols[0:2], keepdims=True), np.argmax(cols[2:4], keepdims=True), cols[4:7], cols[7:10], cols[10:],
