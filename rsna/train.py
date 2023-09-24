@@ -103,6 +103,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     train_iter = RSNADataset(split=train_data, root_dir=ROOT_DIR, transform=torchvision.transforms.Compose([
                                      torchvision.transforms.RandomHorizontalFlip(),
                                      torchvision.transforms.RandomVerticalFlip(),
+                                     torchvision.transforms.RandomRotation(30),
                                     #  torchvision.transforms.ColorJitter(brightness=0.2),
                                     #  torchvision.transforms.ColorJitter(contrast=0.2),
                                     #  torchvision.transforms.RandomAffine(degrees=0, shear=10)
