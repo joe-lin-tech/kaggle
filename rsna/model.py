@@ -161,40 +161,40 @@ class SlicePredictor(nn.Module):
 class CombinedLoss(nn.Module):
     def __init__(self):
         super(CombinedLoss, self).__init__()
-        self.kidney = nn.CrossEntropyLoss(reduction='none')
-        self.liver = nn.CrossEntropyLoss(reduction='none')
-        self.spleen = nn.CrossEntropyLoss(reduction='none')
-        self.organ_weights = torch.tensor([1.0, 2.0, 4.0]).to(DEVICE)
-        self.any_weights = torch.tensor([6.0]).to(DEVICE)
-        # self.kidney = nn.CrossEntropyLoss()
-        # self.liver = nn.CrossEntropyLoss()
-        # self.spleen = nn.CrossEntropyLoss()
+        # self.kidney = nn.CrossEntropyLoss(reduction='none')
+        # self.liver = nn.CrossEntropyLoss(reduction='none')
+        # self.spleen = nn.CrossEntropyLoss(reduction='none')
+        # self.organ_weights = torch.tensor([1.0, 2.0, 4.0]).to(DEVICE)
+        # self.any_weights = torch.tensor([6.0]).to(DEVICE)
+        self.kidney = nn.CrossEntropyLoss()
+        self.liver = nn.CrossEntropyLoss()
+        self.spleen = nn.CrossEntropyLoss()
     
     def forward(self, out, labels):
-        # kidney, liver, spleen = out
-        # ce_loss = self.kidney(kidney, labels[:, 2:5].float()) + self.liver(liver, labels[:, 5:8].float()) + self.spleen(spleen, labels[:, 8:11].float())
-
-        # kidney, liver, spleen = F.softmax(kidney, dim=-1), F.softmax(liver, dim=-1), F.softmax(spleen, dim=-1)
-        # healthy = torch.cat([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]], dim=-1)
-        # any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
-        # any_injury = torch.clamp(any_injury, 1e-7, 1 - 1e-7)
-        # any_loss = torch.neg(labels[:, 11:12] * torch.log(any_injury) + (1 - labels[:, 11:12]) * torch.log(1 - any_injury)) # * (labels[:, 11:12].float() @ self.any_weights + 1)
-        # any_loss = torch.mean(any_loss, dim=0)
-
-        # return ce_loss + any_loss
-
         kidney, liver, spleen = out
-        ce_loss = self.kidney(kidney, labels[:, 2:5].float()) * (labels[:, 2:5].float() @ self.organ_weights) \
-            + self.liver(liver, labels[:, 5:8].float()) * (labels[:, 5:8].float() @ self.organ_weights) \
-                + self.spleen(spleen, labels[:, 8:11].float()) * (labels[:, 8:11].float() @ self.organ_weights)
+        ce_loss = self.kidney(kidney, labels[:, 2:5].float()) + self.liver(liver, labels[:, 5:8].float()) + self.spleen(spleen, labels[:, 8:11].float())
 
         kidney, liver, spleen = F.softmax(kidney, dim=-1), F.softmax(liver, dim=-1), F.softmax(spleen, dim=-1)
         healthy = torch.cat([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]], dim=-1)
         any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
         any_injury = torch.clamp(any_injury, 1e-7, 1 - 1e-7)
-        any_loss = torch.neg(labels[:, 11:12] * torch.log(any_injury) + (1 - labels[:, 11:12]) * torch.log(1 - any_injury)).squeeze(-1) * (labels[:, 11:12].float() @ self.any_weights + 1)
+        any_loss = torch.neg(labels[:, 11:12] * torch.log(any_injury) + (1 - labels[:, 11:12]) * torch.log(1 - any_injury)) # * (labels[:, 11:12].float() @ self.any_weights + 1)
+        any_loss = torch.mean(any_loss, dim=0)
 
-        return torch.mean(ce_loss + any_loss, dim=0)
+        return ce_loss + any_loss
+
+        # kidney, liver, spleen = out
+        # ce_loss = self.kidney(kidney, labels[:, 2:5].float()) * (labels[:, 2:5].float() @ self.organ_weights) \
+        #     + self.liver(liver, labels[:, 5:8].float()) * (labels[:, 5:8].float() @ self.organ_weights) \
+        #         + self.spleen(spleen, labels[:, 8:11].float()) * (labels[:, 8:11].float() @ self.organ_weights)
+
+        # kidney, liver, spleen = F.softmax(kidney, dim=-1), F.softmax(liver, dim=-1), F.softmax(spleen, dim=-1)
+        # healthy = torch.cat([kidney[:, 0:1], liver[:, 0:1], spleen[:, 0:1]], dim=-1)
+        # any_injury, _ = torch.max(1 - healthy, keepdim=True, dim=-1)
+        # any_injury = torch.clamp(any_injury, 1e-7, 1 - 1e-7)
+        # any_loss = torch.neg(labels[:, 11:12] * torch.log(any_injury) + (1 - labels[:, 11:12]) * torch.log(1 - any_injury)).squeeze(-1) * (labels[:, 11:12].float() @ self.any_weights + 1)
+
+        # return torch.mean(ce_loss + any_loss, dim=0)
     
 
 class TraumaDetector(nn.Module):
@@ -218,6 +218,7 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.ReLU(),
+            nn.Dropout3d(0.5)
         )
 
         self.out_kidney = nn.Linear(64, 3)

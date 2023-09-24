@@ -1,12 +1,9 @@
-#!/usr/bin/env python3
-
 import torch
 import torchvision
-import torch.nn as nn
 from torch.cuda.amp.grad_scaler import GradScaler
 from dataset import RSNADataset
 from model import TraumaDetector, CombinedLoss
-from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch.utils.data import DataLoader
 import wandb
 from grad import log_grad_cam
 import pandas as pd
@@ -25,13 +22,7 @@ wandb.init(
     # track hyperparameters and run metadata
     config={
         "learning_rate": LEARNING_RATE,
-        # "mask_backbone_lr": MASK_BACKBONE_LR,
-        # "mask_fcn_lr": MASK_FCN_LR,
-        # "backbone_lr": BACKBONE_LR,
-        # "head_lr": HEAD_LR,
-        # "out_lr": OUT_LR,
         "eta_min": ETA_MIN,
-        # "mask_depth": MASK_DEPTH,
         "epochs": EPOCHS,
         "seed": SEED
     }
@@ -122,7 +113,7 @@ for i, (train_idx, val_idx) in enumerate(splits):
     wandb.watch(model, log_freq=LOG_INTERVAL)
     # cam = GradCAM(model=model, target_layers=[model.out], use_cuda=True)
     
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-3)
     if FROM_CHECKPOINT:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
