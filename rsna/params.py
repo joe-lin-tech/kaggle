@@ -12,7 +12,7 @@ N_CLASSES = 6
 LOG_INTERVAL = 64
 GRAD_CLIP_NORM = 1.0
 RESAMPLE = True
-FROM_CHECKPOINT = False
+FROM_CHECKPOINT = True
 
 SEED = 0
 
@@ -45,5 +45,6 @@ MASK_FOLDER = 'masks/total_seg'
 TEMP_DIR = 'temp'
 
 CHECKPOINT_FOLDER = 'models/checkpoint'
+SLICE_CHECKPOINT_FOLDER = 'models/slice/checkpoint'
 CHECKPOINT_FILE = 'models/rsna_checkpoint.pt'
 SAVE_FILE = 'models/rsna.pt'
