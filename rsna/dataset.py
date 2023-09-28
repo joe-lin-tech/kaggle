@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 from PIL import Image
-# from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 from natsort import natsorted
 import pydicom as dicom
 import nibabel as nib
-from utils import pad_scan, scale_scan, preprocess_slice_predict, postprocess_slice_predict, preprocess_scan
+from utils import pad_scan, scale_scan, preprocess_scan
 import dicomsdl
 from tqdm import tqdm
 from typing import Literal
@@ -31,7 +31,6 @@ class SegmentationDataset(Dataset):
                     'label_path': os.path.join(self.seg_root_dir, os.path.join(*root.split(os.path.sep)[-2:]), f),
                     'index': index
                 })
-        print(self.segmentations)
     
     def __len__(self):
         return len(self.segmentations)
@@ -69,7 +68,7 @@ class SlicePredictionDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
-        self.slices = []
+        slices = []
         for _, patients, _ in os.walk(self.root_dir):
             for patient in patients:
                 for root, scans, _ in os.walk(os.path.join(self.root_dir, patient)):
@@ -83,10 +82,16 @@ class SlicePredictionDataset(Dataset):
                         if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
                             indices = reversed(indices)
                         for i, filename in files:
-                            self.slices.append({
+                            slices.append({
                                 'input_path': os.path.join(root, scan, filename),
                                 'label': indices[i]
                             })
+        train_slices, val_slices = train_test_split(slices)
+        if mode == 'train':
+            self.slices = train_slices
+        else:
+            self.slices = val_slices
+        
     
     def __len__(self):
         return len(self.slices)
@@ -117,13 +122,11 @@ class SlicePredictionDataset(Dataset):
         image = torch.tensor(image.copy()).float().unsqueeze(0)
         image = pad_scan(image)
 
-        image = self.transform['preprocess'](image)
-        if self.mode == 'train':
-            image = self.transform['random'](image)
+        image = self.transform(image)
 
         label = slice['label']
 
-        return { 'input': image, 'labels': label }
+        return { 'inputs': image, 'labels': label }
 
 
 class RSNADataset(Dataset):
