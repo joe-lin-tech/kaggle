@@ -212,6 +212,7 @@ class RSNADataset(Dataset):
                 #     scan = scan[::-1]
                 scan = torch.tensor(scan.copy()).float()
                 scan = pad_scan(scan)
+                scan = resize(scan, (256, 256))
                 # prob = torch.zeros(len(files))
                 # prob[indices] = 1
                 # scan, prob = scale_scan(scan, (dz, dy, dx), prob)
