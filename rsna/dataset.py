@@ -150,31 +150,26 @@ class RSNADataset(Dataset):
             for dirname in dirs:
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
-                # slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
+                slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
                 # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
                 indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
-                # min_index, max_index = 0, len(files)
-                # if len(indices > 0):
-                #     min_index, max_index = np.min(indices), np.max(indices)
                 dcm_start = dicomsdl.open(os.path.join(root, dirname, files[0]))
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
                 dx, dy = dcm_start.PixelSpacing
                 dz = np.abs((dcm_end.ImagePositionPatient[2] - dcm_start.ImagePositionPatient[2]) / len(files))
-                # if dcm_start.ImagePositionPatient[2] > dcm_end.ImagePositionPatient[2]:
-                #     mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[::-1, ::-1, :]
-                # else:
-                #     mask = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
-                # channels = []
-                # for s in slices:
-                #     channels += [int(s) - 1, int(s), int(s) + 1]
-                # for i, filename in enumerate([files[c] for c in channels]):
+                if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
+                    mask = mask[::-1]
+                channels = []
+                for s in slices:
+                    channels += [int(s) - 1, int(s), int(s) + 1]
                 save_file = str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'
                 if save_file in os.listdir(TEMP_DIR):
                     scan = np.load(os.path.join(TEMP_DIR, save_file))
                 else:
-                    for filename in files:
+                    for i, filename in enumerate([files[c] for c in channels]):
+                    # for filename in files:
                         if self.input_type == 'dicom':
                             dcm = dicomsdl.open(os.path.join(root, dirname, filename))
                             info = dcm.getPixelDataInfo()
@@ -201,20 +196,21 @@ class RSNADataset(Dataset):
                         else:
                             image = Image.open(os.path.join(root, dirname, filename))
                             scan.append(np.array(image, dtype=np.float32))
-                        # if (i + 1) % (SLICE_CHANNELS - 1) == 0:
-                        #     mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
-                        #     mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
-                        #     scan.append(mask_slice)
+
+                        if (i + 1) % (SLICE_CHANNELS - 1) == 0:
+                            mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
+                            mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
+                            scan.append(mask_slice)
                     scan = np.stack(scan)
                     np.save(os.path.join(TEMP_DIR, save_file), scan)
-                if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
-                    scan = scan[::-1]
+                # if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
+                #     scan = scan[::-1]
                 scan = torch.tensor(scan.copy()).float()
                 scan = pad_scan(scan)
-                prob = torch.zeros(len(files))
-                prob[indices] = 1
-                scan, prob = scale_scan(scan, (dz, dy, dx), prob)
-                scan = preprocess_scan(scan, prob)
+                # prob = torch.zeros(len(files))
+                # prob[indices] = 1
+                # scan, prob = scale_scan(scan, (dz, dy, dx), prob)
+                # scan = preprocess_scan(scan, prob)
                 images.append(scan)
                 break # TODO - use both scans
         input = images[0] # fix sample selection
