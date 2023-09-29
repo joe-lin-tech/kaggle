@@ -206,12 +206,11 @@ class TraumaDetector(nn.Module):
 
         # TODO: section for Transformer-based architecture
         self.backbone = convnext_tiny(weights=None)
-        self.backbone.features[0][0] = nn.Conv2d(SLICE_CHANNELS, 96, kernel_size=(4, 4), stride=(4, 4))
         self.backbone.classifier[2] = nn.Identity()
 
         self.layer_norm = nn.LayerNorm(768)
         self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
-        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // SLICE_CHANNELS, 768))
+        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 768))
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
