@@ -150,8 +150,10 @@ class RSNADataset(Dataset):
             for dirname in dirs:
                 scan = []
                 files = natsorted(os.listdir(os.path.join(root, dirname)))
+
                 slices = np.linspace(SIDE_CHANNELS, len(files) - 1 - SIDE_CHANNELS, N_SLICES)
                 # slices = np.linspace(len(files) // 4, 3 * len(files) // 4, N_SLICES)
+
                 mask_nifti = nib.load(os.path.join(MASK_FOLDER, str(self.patient_df.iloc[idx].patient_id), dirname + '.nii.gz'))
                 mask_nifti = np.transpose(mask_nifti.get_fdata(), (2, 1, 0))[:, ::-1, :]
                 indices = np.argwhere(np.isin(mask_nifti, ORGAN_IDS))[:, 0]
@@ -159,11 +161,13 @@ class RSNADataset(Dataset):
                 dcm_end = dicomsdl.open(os.path.join(root, dirname, files[-1]))
                 dx, dy = dcm_start.PixelSpacing
                 dz = np.abs((dcm_end.ImagePositionPatient[2] - dcm_start.ImagePositionPatient[2]) / len(files))
+
                 if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
-                    mask = mask[::-1]
+                    mask_nifti = mask_nifti[::-1]
                 channels = []
                 for s in slices:
                     channels += [int(s) - 1, int(s), int(s) + 1]
+
                 save_file = str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'
                 if save_file in os.listdir(TEMP_DIR):
                     scan = np.load(os.path.join(TEMP_DIR, save_file))
@@ -198,9 +202,10 @@ class RSNADataset(Dataset):
                             scan.append(np.array(image, dtype=np.float32))
 
                         if (i + 1) % (SLICE_CHANNELS - 1) == 0:
-                            mask_slice = mask[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
+                            mask_slice = mask_nifti[int(slices[(i + 1) // (SLICE_CHANNELS - 1) - 1]), :, :]
                             mask_slice[~np.isin(mask_slice, ORGAN_IDS)] = 0
                             scan.append(mask_slice)
+
                     scan = np.stack(scan)
                     np.save(os.path.join(TEMP_DIR, save_file), scan)
                 # if dcm_end.ImagePositionPatient[2] > dcm_start.ImagePositionPatient[2]:
