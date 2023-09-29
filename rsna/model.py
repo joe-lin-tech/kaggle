@@ -212,8 +212,8 @@ class TraumaDetector(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
         self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 768))
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=6)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=2)
 
         self.linear = nn.Sequential(
             nn.Linear(768, 256),
