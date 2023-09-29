@@ -3,7 +3,7 @@ from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms.functional import resize
-from torchvision.models import resnet50, resnet18, ResNet18_Weights
+from torchvision.models import resnet50, resnet18, ResNet18_Weights, convnext_tiny
 from torchvision.ops import DropBlock3d
 from params import *
 
@@ -201,29 +201,50 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        backbone = resnet50(weights=None)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        
-        self.head = nn.Sequential(
-            nn.Conv3d(2048, 512, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-            nn.BatchNorm3d(512),
+        # backbone = resnet50(weights=None)
+        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+
+        # TODO: section for Transformer-based architecture
+        self.backbone = convnext_tiny(weights=None)
+        self.backbone.features[0][0] = nn.Conv2d(SLICE_CHANNELS, 96, kernel_size=(4, 4), stride=(4, 4))
+        self.backbone.classifier[2] = nn.Identity()
+
+        self.layer_norm = nn.LayerNorm(768)
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
+        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // SLICE_CHANNELS, 768))
+
+        encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+
+        self.linear = nn.Sequential(
+            nn.Linear(768, 256),
+            nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Dropout3d(0.5),
-            nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-            nn.BatchNorm3d(256),
-            nn.ReLU(),
-            nn.Dropout3d(0.5),
-            # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
-            nn.BatchNorm3d(128),
-            nn.ReLU(),
-            nn.Dropout3d(0.5),
-            # DropBlock3d(p=0.5, block_size=3),
-            nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
-            nn.BatchNorm3d(64),
-            nn.ReLU(),
-            nn.Dropout3d(0.3)
+            nn.Dropout(0.3),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU()
         )
+        #
+        
+        # self.head = nn.Sequential(
+        #     nn.Conv3d(2048, 512, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+        #     nn.BatchNorm3d(512),
+        #     nn.ReLU(),
+        #     nn.Dropout3d(0.5),
+        #     nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+        #     nn.BatchNorm3d(256),
+        #     nn.ReLU(),
+        #     nn.Dropout3d(0.5),
+        #     nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
+        #     nn.BatchNorm3d(128),
+        #     nn.ReLU(),
+        #     nn.Dropout3d(0.5),
+        #     nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
+        #     nn.BatchNorm3d(64),
+        #     nn.ReLU(),
+        #     nn.Dropout3d(0.3)
+        # )
 
         self.out_kidney = nn.Linear(64, 3)
         self.out_liver = nn.Linear(64, 3)
@@ -232,13 +253,23 @@ class TraumaDetector(nn.Module):
     def forward(self, scans: Tensor):
         b, c, h, w = scans.shape
 
-        x = scans.view(b * (c // 3), 3, h, w)
+        # TODO: section for Transformer-based architecture
+        x = scans.view(b * (c // SLICE_CHANNELS), SLICE_CHANNELS, h, w)
         x = self.backbone(x)
-        x = x.reshape(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])
-        x = x.permute(0, 2, 1, 3, 4).contiguous()
-        x = self.head(x)
-        x = F.adaptive_avg_pool3d(x, 1)
-        x = x.reshape(b, -1)
+        x = torch.reshape(x, (b, (c // SLICE_CHANNELS), 768))
+        x = self.layer_norm(x) + self.pos_embedding
+        x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
+        x = self.encoder(x)
+        x = self.linear(x[:, 0, :])
+        #
+
+        # x = scans.view(b * (c // 3), 3, h, w)
+        # x = self.backbone(x)
+        # x = x.reshape(b, c // 3, x.shape[-3], x.shape[-2], x.shape[-1])
+        # x = x.permute(0, 2, 1, 3, 4).contiguous()
+        # x = self.head(x)
+        # x = F.adaptive_avg_pool3d(x, 1)
+        # x = x.reshape(b, -1)
         kidney = self.out_kidney(x)
         liver = self.out_liver(x)
         spleen = self.out_spleen(x)
