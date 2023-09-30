@@ -148,7 +148,7 @@ class RSNADataset(Dataset):
 
         save_file = str(self.patient_df.iloc[idx].patient_id) + '.npy'
         if save_file in os.listdir(TEMP_DIR):
-            input = np.load(os.path.join(TEMP_DIR, save_file))
+            input = torch.tensor(np.load(os.path.join(TEMP_DIR, save_file)))
         else:
             images = []
             for root, dirs, _ in os.walk(path):
