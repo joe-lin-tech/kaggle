@@ -212,7 +212,7 @@ class TraumaDetector(nn.Module):
 
         self.layer_norm = nn.LayerNorm(512)
         self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
-        self.pos_embedding = nn.Embedding(N_CHANNELS // 6, 512)
+        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
@@ -255,13 +255,12 @@ class TraumaDetector(nn.Module):
         b, c, h, w = scans.shape
 
         # TODO: section for Transformer-based architecture
-        x = scans.view(b * (c // 6), 6, h, w)
+        x = scans.view(b * (c // 3), 3, h, w)
         x = self.backbone(x)
         x = F.adaptive_avg_pool2d(x, 1)
         x = torch.flatten(x, 1)
-        x = torch.reshape(x, (b, (c // 6), 512))
-        x = self.layer_norm(x)
-        x = self.pos_embedding(x)
+        x = torch.reshape(x, (b, (c // 3), 512))
+        x = self.layer_norm(x) + self.pos_embedding
         x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)
         x = self.linear(x[:, 0, :])

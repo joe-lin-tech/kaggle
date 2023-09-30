@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
 from params import *
 
 def pad_scan(scan):
@@ -11,7 +12,7 @@ def pad_scan(scan):
         scan = F.pad(scan, [pad // 2, pad - pad // 2, 0, 0], mode='constant', value=0)
     return scan
 
-def scale_scan(scan, slice_spacing, prob=None):
+def scale_scan(scan, slice_spacing, prob=None, mask=None):
     dz, dy, _ = slice_spacing
     d, s, s = scan.shape
     D = int(int(dz / dy * d * 0.5) * (SCAN_SIZE / s))
@@ -28,8 +29,15 @@ def scale_scan(scan, slice_spacing, prob=None):
                 size=(D),
                 mode='linear'
             ).squeeze(0).squeeze(0)
+    
+    if mask is not None:
+        mask = F.interpolate(
+                mask.unsqueeze(0).unsqueeze(0),
+                size=(D, SCAN_SIZE, SCAN_SIZE),
+                mode='trilinear'
+            ).squeeze(0).squeeze(0)
 
-    return scan, prob
+    return scan, prob, mask
 
 def preprocess_slice_predict(slice, prob=None):
     d, s, s = slice.shape
@@ -77,7 +85,7 @@ def postprocess_slice_predict(slice, scan, prob):
 
     return prob
 
-def preprocess_scan(scan, prob):
+def preprocess_scan_prob(scan, prob):
     indices = torch.where(prob > 0)[0]
     if len(indices) == 0:
         start, end = 0, N_CHANNELS
@@ -90,3 +98,13 @@ def preprocess_scan(scan, prob):
         mode='trilinear'
     ).squeeze(0).squeeze(0)
     return sliced_scan
+
+def preprocess_scan_mask(scan, mask):
+    # indices = np.argwhere(np.isin(mask, ORGAN_IDS))[:, 0]
+    masked_scan = scan * np.clip(mask, 0, 1)
+    masked_scan = F.interpolate(
+        masked_scan.unsqueeze(0).unsqueeze(0),
+        size=(N_CHANNELS, SCAN_SIZE, SCAN_SIZE),
+        mode='trilinear'
+    ).squeeze(0).squeeze(0)
+    return masked_scan
