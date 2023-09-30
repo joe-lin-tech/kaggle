@@ -256,9 +256,7 @@ class TraumaDetector(nn.Module):
         # TODO: section for Transformer-based architecture
         x = scans.view(b * (c // SLICE_CHANNELS), SLICE_CHANNELS, h, w)
         x = self.backbone(x)
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = torch.flatten(x, 1)
-        x = torch.reshape(x, (b, (c // SLICE_CHANNELS), 512))
+        x = torch.reshape(x, (b, (c // SLICE_CHANNELS), 768))
         x = self.layer_norm(x) + self.pos_embedding
         x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)
