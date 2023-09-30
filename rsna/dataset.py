@@ -146,7 +146,7 @@ class RSNADataset(Dataset):
     def __getitem__(self, idx):
         path = os.path.join(self.root_dir, str(self.patient_df.iloc[idx].patient_id))
 
-        save_file = str(self.patient_df.iloc[idx].patient_id) + '_' + dirname + '.npy'
+        save_file = str(self.patient_df.iloc[idx].patient_id) + '.npy'
         if save_file in os.listdir(TEMP_DIR):
             input = np.load(os.path.join(TEMP_DIR, save_file))
         else:
