@@ -46,6 +46,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
         loss = loss_fn(out, labels)
 
         # scaler.scale(loss).backward()
+        loss.backward()
 
         if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
             # scaler.unscale_(optimizer)
