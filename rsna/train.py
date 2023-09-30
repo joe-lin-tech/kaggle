@@ -50,7 +50,7 @@ def train_epoch(train_dataloader: DataLoader, model: TraumaDetector, optimizer, 
 
         if ((i + 1) % ACCUM_ITER == 0) or (i + 1 == len(train_dataloader)):
             # scaler.unscale_(optimizer)
-            # torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
 
             # scaler.step(optimizer)
             # scaler.update()
