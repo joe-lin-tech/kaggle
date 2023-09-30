@@ -203,7 +203,6 @@ class TraumaDetector(nn.Module):
 
         backbone = resnet18(weights=None)
         self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
-        self.backbone[0] = nn.Conv2d(6, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 
         # TODO: section for Transformer-based architecture
         # self.backbone = convnext_tiny(weights=None)
