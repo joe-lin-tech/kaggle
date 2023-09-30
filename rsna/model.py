@@ -209,15 +209,17 @@ class TraumaDetector(nn.Module):
         self.backbone.features[0][0] = nn.Conv2d(SLICE_CHANNELS, 96, kernel_size=(4, 4), stride=(4, 4))
         self.backbone.classifier[2] = nn.Identity()
 
-        self.layer_norm = nn.LayerNorm(768)
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
-        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // SLICE_CHANNELS, 768))
+        self.lstm = nn.LSTM(768, 256, num_layers=2, bidirectional=True)
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+        # self.layer_norm = nn.LayerNorm(768)
+        # self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
+        # self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // SLICE_CHANNELS, 768))
+
+        # encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
+        # self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
         self.linear = nn.Sequential(
-            nn.Linear(768, 256),
+            nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -257,10 +259,8 @@ class TraumaDetector(nn.Module):
         x = scans.view(b * (c // SLICE_CHANNELS), SLICE_CHANNELS, h, w)
         x = self.backbone(x)
         x = torch.reshape(x, (b, (c // SLICE_CHANNELS), 768))
-        x = self.layer_norm(x) + self.pos_embedding
-        x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
-        x = self.encoder(x)
-        x = self.linear(x[:, 0, :])
+        x, _ = self.lstm(x)
+        x = self.linear(x[:, -1, :])
         #
 
         # x = scans.view(b * (c // 3), 3, h, w)
