@@ -201,23 +201,23 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        backbone = resnet18(weights=None)
-        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        # backbone = resnet18(weights=None)
+        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
 
         # TODO: section for Transformer-based architecture
-        # self.backbone = convnext_tiny(weights=None)
-        # self.backbone.features[0][0] = nn.Conv2d(6, 96, kernel_size=(4, 4), stride=(4, 4))
-        # self.backbone.classifier[2] = nn.Identity()
+        self.backbone = convnext_tiny(weights=None)
+        self.backbone.features[0][0] = nn.Conv2d(SLICE_CHANNELS, 96, kernel_size=(4, 4), stride=(4, 4))
+        self.backbone.classifier[2] = nn.Identity()
 
-        self.layer_norm = nn.LayerNorm(512)
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
-        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 3, 512))
+        self.layer_norm = nn.LayerNorm(768)
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
+        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // SLICE_CHANNELS, 768))
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
         self.linear = nn.Sequential(
-            nn.Linear(512, 256),
+            nn.Linear(768, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -254,11 +254,11 @@ class TraumaDetector(nn.Module):
         b, c, h, w = scans.shape
 
         # TODO: section for Transformer-based architecture
-        x = scans.view(b * (c // 3), 3, h, w)
+        x = scans.view(b * (c // SLICE_CHANNELS), SLICE_CHANNELS, h, w)
         x = self.backbone(x)
         x = F.adaptive_avg_pool2d(x, 1)
         x = torch.flatten(x, 1)
-        x = torch.reshape(x, (b, (c // 3), 512))
+        x = torch.reshape(x, (b, (c // SLICE_CHANNELS), 512))
         x = self.layer_norm(x) + self.pos_embedding
         x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)

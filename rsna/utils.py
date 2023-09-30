@@ -100,11 +100,35 @@ def preprocess_scan_prob(scan, prob):
     return sliced_scan
 
 def preprocess_scan_mask(scan, mask):
-    # indices = np.argwhere(np.isin(mask, ORGAN_IDS))[:, 0]
-    masked_scan = scan * np.clip(mask, 0, 1)
-    masked_scan = F.interpolate(
-        masked_scan.unsqueeze(0).unsqueeze(0),
-        size=(N_CHANNELS, SCAN_SIZE, SCAN_SIZE),
+    indices = np.argwhere(np.isin(mask, ORGAN_IDS))[:, 0]
+    start, end = SLICE_CHANNELS, scan.shape[0] - SLICE_CHANNELS
+    if len(indices) > 0:
+        start, end = max(indices.min().item(), start), min(indices.max().item(), end)
+    scan = scan[start:end]
+    mask = mask[start:end]
+    scan = F.interpolate(
+        scan.unsqueeze(0).unsqueeze(0),
+        size=(N_SLICES * (2 * SIDE_CHANNELS + 1), SCAN_SIZE, SCAN_SIZE),
         mode='trilinear'
     ).squeeze(0).squeeze(0)
+    mask = F.interpolate(
+        mask.unsqueeze(0).unsqueeze(0),
+        size=(N_SLICES * (2 * SIDE_CHANNELS + 1), SCAN_SIZE, SCAN_SIZE),
+        mode='trilinear'
+    ).squeeze(0).squeeze(0)
+    mask = mask[1::2 * SIDE_CHANNELS + 1]
+
+    masked_scan = [mask[i // SLICE_CHANNELS] if (i + 1) % SLICE_CHANNELS == 0
+                   else scan[(i + 1) // SLICE_CHANNELS * 3 + (i + 1) % SLICE_CHANNELS - 1] for i in range(N_CHANNELS)]
+    masked_scan = torch.stack(masked_scan)
+    
     return masked_scan
+
+
+    # masked_scan = scan * np.clip(mask, 0, 1)
+    # masked_scan = F.interpolate(
+    #     masked_scan.unsqueeze(0).unsqueeze(0),
+    #     size=(N_CHANNELS, SCAN_SIZE, SCAN_SIZE),
+    #     mode='trilinear'
+    # ).squeeze(0).squeeze(0)
+    # return masked_scan
