@@ -217,7 +217,7 @@ class RSNADataset(Dataset):
                     # scan, prob = scale_scan(scan, (dz, dy, dx), prob=prob)
                     # scan = preprocess_scan_prob(scan, prob)
 
-                    scan, _, mask = scale_scan(scan, (dz, dy, dx), mask=torch.tensor(mask_nifti))
+                    scan, _, mask = scale_scan(scan, (dz, dy, dx), mask=torch.tensor(mask_nifti.copy()))
                     scan = preprocess_scan_mask(scan, mask)
 
                     images.append(scan)
