@@ -201,23 +201,24 @@ class TraumaDetector(nn.Module):
     def __init__(self):
         super(TraumaDetector, self).__init__()
 
-        # backbone = resnet50(weights=None)
-        # self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        backbone = resnet18(weights=None)
+        self.backbone = nn.Sequential(*(list(backbone.children())[:-2]))
+        self.backbone[0] = nn.Conv2d(6, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
 
         # TODO: section for Transformer-based architecture
-        self.backbone = convnext_tiny(weights=None)
-        self.backbone.features[0][0] = nn.Conv2d(6, 96, kernel_size=(4, 4), stride=(4, 4))
-        self.backbone.classifier[2] = nn.Identity()
+        # self.backbone = convnext_tiny(weights=None)
+        # self.backbone.features[0][0] = nn.Conv2d(6, 96, kernel_size=(4, 4), stride=(4, 4))
+        # self.backbone.classifier[2] = nn.Identity()
 
-        self.layer_norm = nn.LayerNorm(768)
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 768))
-        self.pos_embedding = nn.Parameter(torch.randn(N_CHANNELS // 6, 768))
+        self.layer_norm = nn.LayerNorm(512)
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
+        self.pos_embedding = nn.Embedding(N_CHANNELS // 6, 512)
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=768, nhead=8)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
         self.linear = nn.Sequential(
-            nn.Linear(768, 256),
+            nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -256,7 +257,9 @@ class TraumaDetector(nn.Module):
         # TODO: section for Transformer-based architecture
         x = scans.view(b * (c // 6), 6, h, w)
         x = self.backbone(x)
-        x = torch.reshape(x, (b, (c // 6), 768))
+        x = F.adaptive_avg_pool2d(x, 1)
+        x = torch.flatten(x, 1)
+        x = torch.reshape(x, (b, (c // 6), 512))
         x = self.layer_norm(x) + self.pos_embedding
         x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)
