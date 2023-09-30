@@ -260,7 +260,8 @@ class TraumaDetector(nn.Module):
         x = F.adaptive_avg_pool2d(x, 1)
         x = torch.flatten(x, 1)
         x = torch.reshape(x, (b, (c // 6), 512))
-        x = self.layer_norm(x) + self.pos_embedding
+        x = self.layer_norm(x)
+        x = self.pos_embedding(x)
         x = torch.cat([self.cls_token.repeat(b, 1, 1), x], dim=1)
         x = self.encoder(x)
         x = self.linear(x[:, 0, :])
