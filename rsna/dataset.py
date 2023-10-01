@@ -137,8 +137,14 @@ class RSNADataset(Dataset):
         self.transform = transform
         self.mode = mode
         self.input_type = input_type
-        # if mode == 'train':
-        #     self.weights = self.set_weights(category)
+
+        # TODO: lines to temporarily compute dataset mean and variance
+        self.slice_mean = 0
+        self.slice_var = 0
+        self.mask_mean = 0
+        self.mask_var = 0
+        self.compute_count = 0
+
     
     def __len__(self):
         return len(self.patient_df)
@@ -149,6 +155,16 @@ class RSNADataset(Dataset):
         save_file = str(self.patient_df.iloc[idx].patient_id) + '.npy'
         if save_file in os.listdir(TEMP_DIR):
             input = torch.tensor(np.load(os.path.join(TEMP_DIR, save_file)))
+
+            # TODO: lines to temporarily compute dataset mean and variance
+            slices = input[torch.arange(input.shape[0]) % SLICE_CHANNELS != 0]
+            self.slice_mean += torch.mean(slices)
+            self.slice_var += torch.var(slices)
+            masks = input[SLICE_CHANNELS - 1::SLICE_CHANNELS]
+            self.mask_mean += torch.mean(masks)
+            self.mask_var += torch.var(masks)
+            self.compute_count += 1
+
         else:
             images = []
             for root, dirs, _ in os.walk(path):
@@ -235,3 +251,11 @@ class RSNADataset(Dataset):
         return { 'scans': input, 'labels': label }
 
     
+    # TODO: method to temporarily compute dataset mean and variance
+    def compute_mean_std(self):
+        slice_mean = self.slice_mean / self.compute_count
+        slice_std = torch.sqrt(self.slice_var / self.compute_count)
+        mask_mean = self.mask_mean / self.compute_count
+        mask_std = torch.sqrt(self.mask_var / self.compute_count)
+        print(self.slice_mean, self.slice_var, self.mask_mean, self.mask_var, self.compute_count)
+        print(slice_mean, slice_std, mask_mean, mask_std)

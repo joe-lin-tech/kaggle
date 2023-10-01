@@ -134,6 +134,11 @@ for i, (train_idx, val_idx) in enumerate(splits):
         train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
         val_loss = evaluate(val_dataloader, model)
+
+        # TODO: temporarily compute mean and std
+        train_iter.compute_mean_std()
+        val_iter.compute_mean_std()
+
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
         torch.save({
             'split': i,
