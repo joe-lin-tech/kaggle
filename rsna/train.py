@@ -107,6 +107,10 @@ for i, (train_idx, val_idx) in enumerate(splits):
     val_iter = RSNADataset(split=val_data, root_dir=ROOT_DIR, mode='val')
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
 
+    # TODO: temporarily compute mean and std
+    train_iter.compute_mean_std()
+    val_iter.compute_mean_std()
+
     model = TraumaDetector()
     if FROM_CHECKPOINT:
         checkpoint = torch.load(CHECKPOINT_FILE)
@@ -134,10 +138,6 @@ for i, (train_idx, val_idx) in enumerate(splits):
         train_loss = train_epoch(train_dataloader, model, optimizer, scheduler)
         end_time = timer()
         val_loss = evaluate(val_dataloader, model)
-
-        # TODO: temporarily compute mean and std
-        train_iter.compute_mean_std()
-        val_iter.compute_mean_std()
 
         print((f"Epoch: {epoch}, Train loss: {train_loss:.3f}, Val loss: {val_loss:.3f}, Epoch time = {(end_time - start_time):.3f}s"))
         torch.save({
