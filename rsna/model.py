@@ -161,14 +161,14 @@ class SlicePredictor(nn.Module):
 class CombinedLoss(nn.Module):
     def __init__(self):
         super(CombinedLoss, self).__init__()
-        # self.kidney = nn.CrossEntropyLoss(reduction='none')
-        # self.liver = nn.CrossEntropyLoss(reduction='none')
-        # self.spleen = nn.CrossEntropyLoss(reduction='none')
-        # self.organ_weights = torch.tensor([1.0, 2.0, 4.0]).to(DEVICE)
-        # self.any_weights = torch.tensor([6.0]).to(DEVICE)
-        self.kidney = nn.CrossEntropyLoss()
-        self.liver = nn.CrossEntropyLoss()
-        self.spleen = nn.CrossEntropyLoss()
+        self.kidney = nn.CrossEntropyLoss(reduction='none')
+        self.liver = nn.CrossEntropyLoss(reduction='none')
+        self.spleen = nn.CrossEntropyLoss(reduction='none')
+        self.organ_weights = torch.tensor([1.0, 2.0, 4.0]).to(DEVICE)
+        self.any_weights = torch.tensor([6.0]).to(DEVICE)
+        # self.kidney = nn.CrossEntropyLoss()
+        # self.liver = nn.CrossEntropyLoss()
+        # self.spleen = nn.CrossEntropyLoss()
     
     def forward(self, out, labels):
         # kidney, liver, spleen = out
