@@ -1,4 +1,5 @@
 import torch
+import torchvision
 import torch.nn.functional as F
 import numpy as np
 from params import *
@@ -118,17 +119,14 @@ def preprocess_scan_mask(scan, mask):
     ).squeeze(0).squeeze(0)
     mask = mask[1::2 * SIDE_CHANNELS + 1]
 
+    # TODO: fix normalization
+    scan_norm = torchvision.transforms.Normalize(mean=28.5, std=54.5)
+    mask_norm = torchvision.transforms.Normalize(mean=5.28, std=17.6)
+    scan = scan_norm(scan)
+    mask = mask_norm(mask)
+
     masked_scan = [mask[i // SLICE_CHANNELS] if (i + 1) % SLICE_CHANNELS == 0
                    else scan[(i + 1) // SLICE_CHANNELS * 3 + (i + 1) % SLICE_CHANNELS - 1] for i in range(N_CHANNELS)]
     masked_scan = torch.stack(masked_scan)
-    
+
     return masked_scan
-
-
-    # masked_scan = scan * np.clip(mask, 0, 1)
-    # masked_scan = F.interpolate(
-    #     masked_scan.unsqueeze(0).unsqueeze(0),
-    #     size=(N_CHANNELS, SCAN_SIZE, SCAN_SIZE),
-    #     mode='trilinear'
-    # ).squeeze(0).squeeze(0)
-    # return masked_scan

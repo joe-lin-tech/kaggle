@@ -108,8 +108,8 @@ for i, (train_idx, val_idx) in enumerate(splits):
     val_dataloader = DataLoader(val_iter, batch_size=BATCH_SIZE, shuffle=True, num_workers=N_WORKERS)
 
     # TODO: temporarily compute mean and std
-    train_iter.compute_mean_std()
-    val_iter.compute_mean_std()
+    # train_iter.compute_mean_std()
+    # val_iter.compute_mean_std()
 
     model = TraumaDetector()
     if FROM_CHECKPOINT:
