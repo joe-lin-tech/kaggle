@@ -120,10 +120,10 @@ def preprocess_scan_mask(scan, mask):
     mask = mask[1::2 * SIDE_CHANNELS + 1]
 
     # TODO: fix normalization
-    # scan_norm = torchvision.transforms.Normalize(mean=28.5, std=54.5)
-    # mask_norm = torchvision.transforms.Normalize(mean=5.28, std=17.6)
-    # scan = scan_norm(scan)
-    # mask = mask_norm(mask)
+    scan_norm = torchvision.transforms.Normalize(mean=28.5, std=54.5)
+    mask_norm = torchvision.transforms.Normalize(mean=0.18, std=0.38)
+    scan = scan_norm(scan)
+    mask = mask_norm(mask)
 
     masked_scan = [mask[i // SLICE_CHANNELS] if (i + 1) % SLICE_CHANNELS == 0
                    else scan[(i + 1) // SLICE_CHANNELS * 3 + (i + 1) % SLICE_CHANNELS - 1] for i in range(N_CHANNELS)]
