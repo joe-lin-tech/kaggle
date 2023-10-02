@@ -234,19 +234,19 @@ class TraumaDetector(nn.Module):
             nn.Conv3d(2048, 512, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(512),
             nn.ReLU(),
-            nn.Dropout3d(0.5),
+            # nn.Dropout3d(0.5),
             nn.Conv3d(512, 256, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(256),
             nn.ReLU(),
-            nn.Dropout3d(0.5),
+            # nn.Dropout3d(0.5),
             nn.Conv3d(256, 128, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(2, 1, 1)),
             nn.BatchNorm3d(128),
             nn.ReLU(),
-            nn.Dropout3d(0.5),
+            # nn.Dropout3d(0.5),
             nn.Conv3d(128, 64, kernel_size=(5, 3, 3), stride=(2, 1, 1), padding=(1, 1, 1)),
             nn.BatchNorm3d(64),
             nn.ReLU(),
-            nn.Dropout3d(0.3)
+            # nn.Dropout3d(0.3)
         )
 
         self.out_kidney = nn.Linear(64, 3)
