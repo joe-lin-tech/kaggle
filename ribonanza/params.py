@@ -1,4 +1,9 @@
-TRAIN_FILE = 'data/train_data.csv'
-BATCH_SIZE = 8
+TRAIN_FILE = 'data/train_data.parquet'
+CHECKPOINT_FOLDER = 'models/checkpoint'
+BATCH_SIZE = 128
 LEARNING_RATE = 5e-4
-EPOCH = 32
+EPOCHS = 32
+N_FOLDS = 5
+SEED = 2023
+LOG_INTERVAL = 4
+GRAD_CLIP_NORM = 3
