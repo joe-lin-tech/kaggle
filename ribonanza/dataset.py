@@ -9,7 +9,7 @@ from params import *
 # from https://www.kaggle.com/code/iafoss/rna-starter-0-186-lb/notebook
 
 class RibonanzaDataset(Dataset):
-    def __init__(self, file: str, fold: int, split: Literal['train', 'val'] = 'train'):
+    def __init__(self, file: str, fold: int, split: Literal['train', 'val'] = 'train', mask_only: bool = False):
         data = pd.read_parquet(file)
         
         self.max_length = 206
@@ -30,6 +30,8 @@ class RibonanzaDataset(Dataset):
         self.error_DMS = data_DMS[[c for c in data_DMS.columns if 'reactivity_error' in c]].values
         self.snr_2A3 = data_2A3['signal_to_noise'].values
         self.snr_DMS = data_DMS['signal_to_noise'].values
+        
+        self.mask_only = mask_only
 
     def __len__(self):
         return len(self.sequences)
@@ -38,6 +40,9 @@ class RibonanzaDataset(Dataset):
         sequence = np.array([self.base_map[s] for s in self.sequences[index]])
         mask = torch.zeros(self.max_length, dtype=torch.bool)
         mask[:len(sequence)] = True
+
+        if self.mask_only:
+            return { 'mask': mask }, { 'mask': mask }
         
         sequence = np.pad(sequence, (0, self.max_length - len(sequence)))
         reactivity = torch.from_numpy(np.stack([self.reactivity_2A3[index], self.reactivity_DMS[index]], -1))
@@ -46,6 +51,7 @@ class RibonanzaDataset(Dataset):
 
         return { 'sequence': torch.from_numpy(sequence), 'mask': mask }, { 'reactivity': reactivity, 'error': error, 'snr': snr, 'mask': mask }
 
+# length match sampler implementation from https://www.kaggle.com/code/iafoss/rna-starter-0-186-lb/notebook
 class LengthMatchSampler(BatchSampler):
     def __iter__(self):
         buckets = [[]] * 100
@@ -56,7 +62,7 @@ class LengthMatchSampler(BatchSampler):
             if isinstance(s, tuple): L = s[0]["mask"].sum()
             else: L = s["mask"].sum()
             L = max(1, L // 16) 
-            if len(buckets[L]) == 0:  buckets[L] = []
+            if len(buckets[L]) == 0: buckets[L] = []
             buckets[L].append(idx)
             
             if len(buckets[L]) == self.batch_size:

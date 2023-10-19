@@ -3,21 +3,6 @@ import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
 import math
-
-class PositionalEncoding(nn.Module):
-    def __init__(self, d_model: int, max_len: int = 206):
-        super(PositionalEncoding, self).__init__()
-
-        # TODO - save computation time by storing buffer?
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
-        pe = torch.zeros(1, max_len, d_model)
-        pe[0, :, 0::2] = torch.sin(position * div_term)
-        pe[0, :, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe)
-
-    def forward(self, max_length: int) -> Tensor:
-        return self.pe[:, :max_length, :]
     
 
 class RNALoss(nn.Module):
@@ -32,6 +17,21 @@ class RNALoss(nn.Module):
         mae = self.mae_loss(preds, labels)
         return mae[~torch.isnan(mae)].mean()
     
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, max_len: int = 206):
+        super(PositionalEncoding, self).__init__()
+
+        # TODO - save computation time by storing buffer?
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(1, max_len, d_model)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, max_length: int) -> Tensor:
+        return self.pe[:, :max_length, :]
+
 
 class RNAPredictor(nn.Module):
     def __init__(self, d_model: int, n_heads: int): # n_heads should be d_model // head_size
@@ -49,4 +49,3 @@ class RNAPredictor(nn.Module):
         x = inputs['sequence'][:, :batch_length]
         embeddings = self.embedding(x) + self.pos_encoding(batch_length)
         return self.out(self.transformer(embeddings, src_key_padding_mask=~mask))
-        
