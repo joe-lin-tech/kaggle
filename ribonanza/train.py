@@ -1,10 +1,7 @@
 from torch.utils.data import RandomSampler, SequentialSampler
-from torch.optim import Adam
 import torch
-import torch.nn as nn
 from dataset import RibonanzaDataset, LengthMatchSampler
 from model import RNAPredictor, RNALoss
-from tqdm import tqdm
 import numpy as np
 from fastai.vision.all import *
 from fastai.callback.wandb import *
@@ -34,7 +31,8 @@ wandb.init(
     }
 )
 
-model = RNAPredictor(d_model=192, n_heads=6)
+model = RNAPredictor(d_model=192, n_heads=8)
+model.to(DEVICE)
 loss_fn = RNALoss()
 
 for fold in range(N_FOLDS):
@@ -51,7 +49,7 @@ for fold in range(N_FOLDS):
     val_dataloader = torch.utils.data.DataLoader(val_iter, batch_sampler=val_sampler)
 
     learner = Learner(DataLoaders(train_dataloader, val_dataloader, device=DEVICE), model, loss_func=loss_fn,
-                        cbs=[GradientClip(3.0), WandbCallback()])
+                        cbs=[GradientClip(3.0), WandbCallback()]).to_fp16()
 
     for epoch in range(EPOCHS):
         learner.fit_one_cycle(1, lr_max=5e-4, wd=0.05, pct_start=0.02)
