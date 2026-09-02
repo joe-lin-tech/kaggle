@@ -1,0 +1,17 @@
+[project]
+name = "kaggle"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "joe-lin-tech", email = "joe.tech.lin@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+kaggle = "kaggle:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
