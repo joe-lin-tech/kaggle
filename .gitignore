@@ -6,3 +6,4 @@ wandb
 kaggle.pem
 .DS_Store
 *.csv
+runs
